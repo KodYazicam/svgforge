@@ -18,7 +18,7 @@
 capsule-render, github-readme-stats, and typing SVGs look great until the CDN is down or the theme breaks. **svgforge** writes the same kind of cards as files you commit. GitHub serves them from your repo. No camo outage, no rate limit, no query-string theme API.
 
 ```bash
-npx svgforge banner --title ctxpack --subtitle "Pack a codebase into LLM context" -o assets/banner.svg
+npx @kodyazicam/svgforge banner --title ctxpack --subtitle "Pack a codebase into LLM context" -o assets/banner.svg
 ```
 
 <p align="center">
@@ -54,8 +54,8 @@ npx svgforge banner --title ctxpack --subtitle "Pack a codebase into LLM context
 ## Install
 
 ```bash
-npx svgforge banner --title hello -o banner.svg
-npm install -g svgforge
+npx @kodyazicam/svgforge banner --title hello -o banner.svg
+npm install -g @kodyazicam/svgforge
 
 git clone https://github.com/KodYazicam/svgforge.git
 cd svgforge
