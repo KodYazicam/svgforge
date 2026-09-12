@@ -1,0 +1,55 @@
+{
+  "name": "svgforge",
+  "version": "1.0.0",
+  "description": "Generate GitHub README SVGs locally: banners, stat cards, skill bars, terminals. No third-party render service.",
+  "keywords": [
+    "svg",
+    "readme",
+    "github",
+    "badge",
+    "card",
+    "cli",
+    "banner"
+  ],
+  "license": "SEE LICENSE IN LICENSE",
+  "author": "Batuhan (KodYazicam) <https://github.com/KodYazicam>",
+  "homepage": "https://github.com/KodYazicam/svgforge",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/KodYazicam/svgforge.git"
+  },
+  "type": "module",
+  "bin": {
+    "svgforge": "./dist/cli.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run",
+    "examples": "node dist/cli.js render examples/demo.json -o examples/",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
+  },
+  "allowScripts": {
+    "esbuild@0.21.5": true
+  }
+}

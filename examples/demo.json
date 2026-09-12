@@ -1,0 +1,51 @@
+{
+  "theme": "midnight",
+  "cards": [
+    {
+      "type": "banner",
+      "title": "KodYazicam",
+      "subtitle": "Kod yazıyorum, sistem kuruyorum, çözüm üretiyorum.",
+      "out": "banner.svg"
+    },
+    {
+      "type": "stats",
+      "title": "Open source",
+      "items": [
+        { "label": "Tools shipped", "value": "5" },
+        { "label": "Stack", "value": "TS · Python · Discord" },
+        { "label": "License", "value": "KYAL-1.0" }
+      ],
+      "out": "stats.svg"
+    },
+    {
+      "type": "skills",
+      "title": "Stack",
+      "items": [
+        { "name": "TypeScript / Node", "level": 92 },
+        { "name": "React / Next.js", "level": 88 },
+        { "name": "Python / FastAPI", "level": 84 },
+        { "name": "Discord.js", "level": 86 },
+        { "name": "Docker / Linux", "level": 78 }
+      ],
+      "out": "skills.svg"
+    },
+    {
+      "type": "terminal",
+      "title": "kodyazicam@github",
+      "lines": [
+        "$ npx ctxpack . -o prompt.md",
+        "wrote prompt.md  files=42  tokens≈11840",
+        "$ npx envsentinel check",
+        "ok  12 variables",
+        "$ hookyard --port 4242"
+      ],
+      "out": "terminal.svg"
+    },
+    {
+      "type": "badge",
+      "label": "license",
+      "value": "KYAL-1.0",
+      "out": "badge.svg"
+    }
+  ]
+}

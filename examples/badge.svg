@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="149" height="28" viewBox="0 0 149 28" role="img" aria-label="license: KYAL-1.0">
+
+  <rect width="149" height="28" rx="6" fill="#0f0c29"/>
+  <rect width="71" height="28" rx="6" fill="#24243e"/>
+  <rect x="65" width="6" height="28" fill="#24243e"/>
+  <rect x="71" width="78" height="28" fill="#7c3aed"/>
+  <text x="35.5" y="19" text-anchor="middle" fill="#c4b5fd" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12">license</text>
+  <text x="110" y="19" text-anchor="middle" fill="#ffffff" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700">KYAL-1.0</text>
+
+</svg>

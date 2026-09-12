@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="520" height="284" viewBox="0 0 520 284" role="img" aria-label="Stack">
+
+  <rect width="520" height="284" rx="16" fill="#0f0c29" stroke="#302b63"/>
+  <text x="28" y="36" fill="#ffffff" font-family="ui-sans-serif, system-ui, sans-serif" font-size="18" font-weight="700">Stack</text>
+
+  <text x="28" y="58" fill="#c4b5fd" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13">TypeScript / Node</text>
+  <rect x="28" y="66" width="464" height="8" rx="4" fill="#24243e"/>
+  <rect x="28" y="66" width="427" height="8" rx="4" fill="#a78bfa"/>
+  <text x="28" y="102" fill="#c4b5fd" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13">React / Next.js</text>
+  <rect x="28" y="110" width="464" height="8" rx="4" fill="#24243e"/>
+  <rect x="28" y="110" width="408" height="8" rx="4" fill="#a78bfa"/>
+  <text x="28" y="146" fill="#c4b5fd" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13">Python / FastAPI</text>
+  <rect x="28" y="154" width="464" height="8" rx="4" fill="#24243e"/>
+  <rect x="28" y="154" width="390" height="8" rx="4" fill="#a78bfa"/>
+  <text x="28" y="190" fill="#c4b5fd" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13">Discord.js</text>
+  <rect x="28" y="198" width="464" height="8" rx="4" fill="#24243e"/>
+  <rect x="28" y="198" width="399" height="8" rx="4" fill="#a78bfa"/>
+  <text x="28" y="234" fill="#c4b5fd" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13">Docker / Linux</text>
+  <rect x="28" y="242" width="464" height="8" rx="4" fill="#24243e"/>
+  <rect x="28" y="242" width="362" height="8" rx="4" fill="#a78bfa"/>
+
+</svg>
