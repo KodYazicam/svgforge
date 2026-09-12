@@ -6,3 +6,4 @@ export { badge, type BadgeOptions } from "./cards/badge.js";
 export { renderCard, renderManifest, type Card, type Manifest } from "./render.js";
 export { THEMES, resolveTheme, escapeXml, type Theme } from "./escape.js";
 export { run as runCli } from "./cli.js";
+export { invokedDirectly } from "./main.js";

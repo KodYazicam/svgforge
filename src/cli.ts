@@ -8,6 +8,7 @@ import { terminal } from "./cards/terminal.js";
 import { badge } from "./cards/badge.js";
 import { renderManifest, type Manifest } from "./render.js";
 import { THEMES } from "./escape.js";
+import { invokedDirectly } from "./main.js";
 
 function help(): string {
   return `
@@ -93,7 +94,8 @@ export function run(argv: string[]): number {
     if (cmd === "skills") {
       const items = takeAll(argv, "--item").map((pair) => {
         const [name, level] = pair.split("=");
-        return { name, level: Number(level) };
+        const n = Number(level);
+        return { name, level: Number.isFinite(n) ? n : 0 };
       });
       const svg = skills({ title: take(argv, "--title") ?? "Skills", items, theme });
       if (out) writeOut(out, svg);
@@ -131,6 +133,7 @@ export function run(argv: string[]): number {
       mkdirSync(dir, { recursive: true });
       for (const item of renderManifest(manifest)) {
         const target = join(dir, item.file);
+        mkdirSync(dirname(target), { recursive: true });
         writeFileSync(target, item.svg);
         console.log(`wrote ${target}`);
       }
@@ -144,5 +147,4 @@ export function run(argv: string[]): number {
   }
 }
 
-const isDirect = process.argv[1]?.includes("cli");
-if (isDirect) process.exitCode = run(process.argv.slice(2));
+if (invokedDirectly(import.meta.url)) process.exitCode = run(process.argv.slice(2));
