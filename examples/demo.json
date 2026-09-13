@@ -33,9 +33,9 @@
       "type": "terminal",
       "title": "kodyazicam@github",
       "lines": [
-        "$ npx ctxpack . -o prompt.md",
+        "$ node dist/cli.js . -o prompt.md",
         "wrote prompt.md  files=42  tokens≈11840",
-        "$ npx envsentinel check",
+        "$ node dist/cli.js check",
         "ok  12 variables",
         "$ hookyard --port 4242"
       ],

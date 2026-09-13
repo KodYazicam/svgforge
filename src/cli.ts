@@ -19,7 +19,7 @@ Usage:
   svgforge banner --title ctxpack --subtitle "Pack a codebase" -o banner.svg
   svgforge stats --title Stats --item Stars=12 --item Forks=3 -o stats.svg
   svgforge skills --item TypeScript=90 --item Python=80 -o skills.svg
-  svgforge terminal --line "$ npx ctxpack ." --line "wrote prompt.md" -o term.svg
+  svgforge terminal --line "$ node dist/cli.js ." --line "wrote prompt.md" -o term.svg
   svgforge badge --label license --value KYAL-1.0 -o badge.svg
   svgforge render manifest.json -o ./assets
   svgforge themes

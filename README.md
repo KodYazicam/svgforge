@@ -19,7 +19,9 @@
 capsule-render, github-readme-stats, and typing SVGs look great until the CDN is down or the theme breaks. **svgforge** writes the same kind of cards as files you commit. GitHub serves them from your repo. No camo outage, no rate limit, no query-string theme API.
 
 ```bash
-npx @kodyazicam/svgforge banner --title ctxpack --subtitle "Pack a codebase into LLM context" -o assets/banner.svg
+git clone https://github.com/KodYazicam/svgforge.git
+cd svgforge && npm ci && npm run build
+node dist/cli.js banner --title ctxpack --subtitle "Pack a codebase into LLM context" -o assets/banner.svg
 ```
 
 The scoped package name is `@kodyazicam/svgforge`. The binary is `svgforge`. Library import:
@@ -61,16 +63,16 @@ import { banner } from "@kodyazicam/svgforge";
 
 ## Install
 
-```bash
-npx @kodyazicam/svgforge banner --title hello -o banner.svg
-npm install -g @kodyazicam/svgforge
+Not on npm. Clone and build:
 
+```bash
 git clone https://github.com/KodYazicam/svgforge.git
 cd svgforge
 npm ci
 npm test
 npm run build
-node dist/cli.js render examples/demo.json -o examples/
+node dist/cli.js banner --title hello -o banner.svg
+# optional: npm link
 ```
 
 ## Quick start
@@ -222,7 +224,7 @@ Fonts are generic (`ui-monospace`, `ui-sans-serif`) so GitHub’s renderer does 
 
 **Can I edit the SVG in Figma?** Yes. It is plain SVG.
 
-**Why `@kodyazicam/svgforge`?** The unscoped `svgforge` name on npm was already taken.
+**Is it on npm?** No. Clone this repo. The package name in `package.json` is `@kodyazicam/svgforge` so a local `npm link` does not collide with the unrelated public `svgforge` package.
 
 ## License — KYAL-1.0
 
