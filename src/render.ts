@@ -1,3 +1,4 @@
+import { posix, relative, resolve, sep } from "node:path";
 import { banner, type BannerOptions } from "./cards/banner.js";
 import { stats, type StatsOptions } from "./cards/stats.js";
 import { skills, type SkillsOptions } from "./cards/skills.js";
@@ -36,11 +37,30 @@ export function renderCard(card: Card, fallbackTheme?: string): string {
   }
 }
 
+export function safeOutputPath(baseDir: string, file: string): string {
+  if (!file || file.includes("\0") || posix.isAbsolute(file) || file.startsWith("/") || /^[A-Za-z]:[\\/]/.test(file)) {
+    throw new Error(`refusing absolute output path: ${file}`);
+  }
+  const target = resolve(baseDir, file);
+  const rel = relative(resolve(baseDir), target);
+  if (!rel || rel.startsWith("..") || rel.split(sep).includes("..")) {
+    throw new Error(`refusing path traversal in out: ${file}`);
+  }
+  return target;
+}
+
 export function renderManifest(manifest: Manifest): Array<{ file: string; svg: string }> {
+  if (!manifest?.cards || !Array.isArray(manifest.cards)) {
+    throw new Error("manifest must contain a cards array");
+  }
   return manifest.cards.map((card, index) => {
-    const file =
-      card.out ??
-      `${card.type}-${index + 1}.svg`;
+    if (!card || typeof card !== "object" || !("type" in card)) {
+      throw new Error(`card ${index + 1} is missing type`);
+    }
+    const file = card.out ?? `${card.type}-${index + 1}.svg`;
+    if (file.includes("..") || posix.isAbsolute(file) || file.startsWith("/") || /^[A-Za-z]:[\\/]/.test(file)) {
+      throw new Error(`refusing path traversal in out: ${file}`);
+    }
     return { file, svg: renderCard(card, manifest.theme) };
   });
 }

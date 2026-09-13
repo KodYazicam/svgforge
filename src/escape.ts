@@ -7,6 +7,13 @@ export function escapeXml(value: string): string {
     .replaceAll("'", "&apos;");
 }
 
+export function svgId(seed: string, suffix = "g"): string {
+  const safe = seed.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 24) || "card";
+  let hash = 0;
+  for (let i = 0; i < seed.length; i += 1) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+  return `${suffix}-${safe}-${hash.toString(16)}`;
+}
+
 export function wrap(id: string, inner: string, width: number, height: number): string {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeXml(id)}">

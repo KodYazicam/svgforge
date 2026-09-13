@@ -8,6 +8,7 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/KodYazicam/svgforge/actions"><img src="https://img.shields.io/github/actions/workflow/status/KodYazicam/svgforge/ci.yml?style=flat-square" alt="CI"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D20-339933?style=flat-square" alt="Node">
   <img src="https://img.shields.io/badge/license-KYAL--1.0-7C3AED?style=flat-square" alt="License">
   <img src="https://img.shields.io/badge/author-KodYazicam-0D0D0D?style=flat-square" alt="Author">
@@ -19,6 +20,12 @@ capsule-render, github-readme-stats, and typing SVGs look great until the CDN is
 
 ```bash
 npx @kodyazicam/svgforge banner --title ctxpack --subtitle "Pack a codebase into LLM context" -o assets/banner.svg
+```
+
+The scoped package name is `@kodyazicam/svgforge`. The binary is `svgforge`. Library import:
+
+```ts
+import { banner } from "@kodyazicam/svgforge";
 ```
 
 <p align="center">
@@ -39,6 +46,7 @@ npx @kodyazicam/svgforge banner --title ctxpack --subtitle "Pack a codebase into
 - [Themes](#themes)
 - [CLI](#cli)
 - [Manifest](#manifest)
+- [Path confinement](#path-confinement)
 - [Library](#library)
 - [GitHub README usage](#github-readme-usage)
 - [Escaping and limits](#escaping-and-limits)
@@ -59,7 +67,7 @@ npm install -g @kodyazicam/svgforge
 
 git clone https://github.com/KodYazicam/svgforge.git
 cd svgforge
-npm install
+npm ci
 npm test
 npm run build
 node dist/cli.js render examples/demo.json -o examples/
@@ -83,7 +91,7 @@ Without `-o` / `--out`, SVG goes to stdout (redirect with `> file.svg`).
 
 | Type | Flags | Use |
 | --- | --- | --- |
-| `banner` | `--title` `--subtitle` | Hero header |
+| `banner` | `--title` `--subtitle` | Hero header. Gradient IDs are unique per title so two banners on one README do not paint each other. |
 | `stats` | `--title` `--item Label=Value` (repeat) | Label / value rows |
 | `skills` | `--title` `--item Name=0-100` (repeat) | Percentage bars (clamped 0–100; invalid → 0) |
 | `terminal` | `--title` `--line text` (repeat) | Fake shell; lines starting with `$` or `>` use the accent color |
@@ -99,6 +107,8 @@ All commands accept `--theme`.
 svgforge themes
 ```
 
+Unknown names fall back to `midnight`.
+
 ## CLI
 
 ```text
@@ -109,7 +119,7 @@ svgforge --help
 svgforge --version
 ```
 
-`render` writes one file per card. Nested `out` paths are created (`assets/hero/banner.svg`).
+`render` writes one file per card. Nested `out` paths are created (`assets/hero/banner.svg`) **inside** `-o`.
 
 ## Manifest
 
@@ -145,10 +155,14 @@ svgforge --version
 
 Per-card `theme` overrides the manifest default. If `out` is omitted, files are `banner-1.svg`, `stats-2.svg`, …
 
+## Path confinement
+
+`out` values that contain `..`, that are absolute (`/etc/cron.d/pwn.svg`), or that would resolve outside `-o` are **rejected**. Do not feed an untrusted manifest to `render` and expect writes to stay in the output directory — and if you find a bypass, see [SECURITY.md](./SECURITY.md).
+
 ## Library
 
 ```ts
-import { banner, skills, renderManifest, THEMES } from "svgforge";
+import { banner, skills, renderManifest, THEMES } from "@kodyazicam/svgforge";
 
 const svg = banner({
   title: "envsentinel",
@@ -162,7 +176,7 @@ const files = renderManifest({
 });
 ```
 
-Exports: `banner`, `stats`, `skills`, `terminal`, `badge`, `renderCard`, `renderManifest`, `THEMES`, `escapeXml`.
+Exports: `banner`, `stats`, `skills`, `terminal`, `badge`, `renderCard`, `renderManifest`, `safeOutputPath`, `THEMES`, `escapeXml`, `svgId`.
 
 ## GitHub README usage
 
@@ -177,6 +191,8 @@ Commit the SVG, then:
 Relative paths work on GitHub, npm, and clones. Do not hotlink a render API if you want the image to survive that API.
 
 Dark GitHub UI: use `midnight`, `tokyonight`, `dracula`, or `github`. Light UI: `nord` is the least dark.
+
+The KodYazicam profile README uses the same generator so a Vercel 402 cannot blank the header.
 
 ## Escaping and limits
 
@@ -194,6 +210,8 @@ Fonts are generic (`ui-monospace`, `ui-sans-serif`) so GitHub’s renderer does 
 | Theme ignored | Name must be one of `svgforge themes`. Unknown names fall back to `midnight` |
 | `--item` parsed wrong | Use `Label=Value` with no spaces around `=`, or quote: `--item "Stars=12"` |
 | `render` missing files | Pass `-o` directory; check `out` filenames in the JSON |
+| `refusing path traversal` | `out` tried to leave the output directory. Use a relative name |
+| Two banners look identical | Old files used `id="g"`. Rebuild with this version (unique gradient ids) |
 | XML entity in title | Already escaped. If you double-escape you will see `&amp;amp;` |
 
 ## FAQ
@@ -203,6 +221,8 @@ Fonts are generic (`ui-monospace`, `ui-sans-serif`) so GitHub’s renderer does 
 **Animated banners?** Not in v1. Static SVG only.
 
 **Can I edit the SVG in Figma?** Yes. It is plain SVG.
+
+**Why `@kodyazicam/svgforge`?** The unscoped `svgforge` name on npm was already taken.
 
 ## License — KYAL-1.0
 

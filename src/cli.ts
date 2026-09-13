@@ -1,14 +1,15 @@
 #!/usr/bin/env node
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 import { banner } from "./cards/banner.js";
 import { stats } from "./cards/stats.js";
 import { skills } from "./cards/skills.js";
 import { terminal } from "./cards/terminal.js";
 import { badge } from "./cards/badge.js";
-import { renderManifest, type Manifest } from "./render.js";
+import { renderManifest, safeOutputPath, type Manifest } from "./render.js";
 import { THEMES } from "./escape.js";
 import { invokedDirectly } from "./main.js";
+import { packageVersion } from "./version.js";
 
 function help(): string {
   return `
@@ -59,7 +60,7 @@ export function run(argv: string[]): number {
     return 0;
   }
   if (cmd === "-v" || cmd === "--version") {
-    console.log("1.0.0");
+    console.log(packageVersion());
     return 0;
   }
   if (cmd === "themes") {
@@ -129,10 +130,10 @@ export function run(argv: string[]): number {
         return 1;
       }
       const manifest = JSON.parse(readFileSync(resolve(file), "utf8")) as Manifest;
-      const dir = out ?? ".";
+      const dir = resolve(out ?? ".");
       mkdirSync(dir, { recursive: true });
       for (const item of renderManifest(manifest)) {
-        const target = join(dir, item.file);
+        const target = safeOutputPath(dir, item.file);
         mkdirSync(dirname(target), { recursive: true });
         writeFileSync(target, item.svg);
         console.log(`wrote ${target}`);

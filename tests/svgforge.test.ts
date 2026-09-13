@@ -7,7 +7,7 @@ import { stats } from "../src/cards/stats.js";
 import { skills } from "../src/cards/skills.js";
 import { terminal } from "../src/cards/terminal.js";
 import { badge } from "../src/cards/badge.js";
-import { renderManifest } from "../src/render.js";
+import { renderManifest, safeOutputPath } from "../src/render.js";
 import { escapeXml } from "../src/escape.js";
 import { run } from "../src/cli.js";
 
@@ -26,10 +26,17 @@ describe("cards", () => {
     expect(badge({ label: "license", value: "KYAL-1.0" })).toContain("KYAL-1.0");
   });
 
-  it("clamps skill bars", () => {
+  it("clamps skill bars and namespaces banner gradients", () => {
     const svg = skills({ items: [{ name: "X", level: 150 }] });
-    expect(svg).toContain("svg");
+    expect(svg).toContain('width="464"');
     expect(escapeXml("<")).toBe("&lt;");
+    const a = banner({ title: "one" });
+    const b = banner({ title: "two" });
+    const idA = a.match(/id="(grad-[^"]+)"/)?.[1];
+    const idB = b.match(/id="(grad-[^"]+)"/)?.[1];
+    expect(idA).toBeTruthy();
+    expect(idB).toBeTruthy();
+    expect(idA).not.toBe(idB);
   });
 });
 
@@ -59,5 +66,14 @@ describe("manifest + cli", () => {
     });
     expect(out[0].file).toBe("banner-1.svg");
     expect(out[0].svg).toContain("x");
+  });
+
+  it("rejects path traversal in manifest out", () => {
+    expect(() =>
+      renderManifest({
+        cards: [{ type: "banner", title: "x", out: "../evil.svg" }],
+      }),
+    ).toThrow(/traversal/);
+    expect(() => safeOutputPath("/tmp/out", "../evil.svg")).toThrow(/traversal/);
   });
 });
