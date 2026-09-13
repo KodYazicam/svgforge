@@ -24,7 +24,7 @@ cd svgforge && npm ci && npm run build
 node dist/cli.js banner --title ctxpack --subtitle "Pack a codebase into LLM context" -o assets/banner.svg
 ```
 
-The scoped package name is `@kodyazicam/svgforge`. The binary is `svgforge`. Library import:
+After `npm ci && npm run build`, the CLI is `node dist/cli.js`. `npm link` in this clone puts `svgforge` on your PATH. From another project that file-depends on this repo:
 
 ```ts
 import { banner } from "@kodyazicam/svgforge";
@@ -162,6 +162,8 @@ Per-card `theme` overrides the manifest default. If `out` is omitted, files are 
 `out` values that contain `..`, that are absolute (`/etc/cron.d/pwn.svg`), or that would resolve outside `-o` are **rejected**. Do not feed an untrusted manifest to `render` and expect writes to stay in the output directory — and if you find a bypass, see [SECURITY.md](./SECURITY.md).
 
 ## Library
+
+After `npm install /path/to/svgforge` (this clone):
 
 ```ts
 import { banner, skills, renderManifest, THEMES } from "@kodyazicam/svgforge";
