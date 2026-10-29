@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: write
+  id-token: write
 
 jobs:
   release:
@@ -14,7 +15,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
       - run: npm ci
       - run: npm run build
@@ -28,6 +29,14 @@ jobs:
             found { print }
           ' CHANGELOG.md > "${RUNNER_TEMP}/notes.md"
           test -s "${RUNNER_TEMP}/notes.md"
+      - name: Publish to npm
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          if npm view "@kodyazicam/svgforge@${version}" version >/dev/null 2>&1; then
+            echo "@kodyazicam/svgforge@${version} is already published; skipping."
+          else
+            npm publish --provenance --access public
+          fi
       - name: GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
