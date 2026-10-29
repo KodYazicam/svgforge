@@ -17,6 +17,10 @@ jobs:
         with:
           node-version: 24
           cache: npm
+      - name: Verify tag matches package.json
+        run: |
+          pkg_version="$(node -p "require('./package.json').version")"
+          test "v${pkg_version}" = "${GITHUB_REF_NAME}"
       - run: npm ci
       - run: npm run build
       - run: npm test
