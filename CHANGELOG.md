@@ -5,7 +5,11 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.5.1] - 2026-10-29
+## [2.5.2] - 2026-10-29
+
+### Fixed
+
+- Re-released as 2.5.2 because npm's registry left 2.5.1 in an unusable staged state (`409 Cannot publish over previously staged version`). No code changes from 2.5.1.
 
 ### Added
 
