@@ -67,11 +67,11 @@
       "type": "terminal",
       "title": "kodyazicam@github",
       "lines": [
-        "$ node dist/cli.js . -o prompt.md",
-        "wrote prompt.md  files=42  tokens≈11840",
-        "$ node dist/cli.js check",
-        "ok  12 variables",
-        "$ hookyard --port 4242"
+        "$ svgforge render examples/demo.json -o examples/",
+        "wrote examples/banner.svg",
+        "wrote examples/stats.svg",
+        "$ svgforge demo -o ./svgforge-demo",
+        "wrote svgforge-demo/cover.svg"
       ],
       "out": "terminal.svg"
     },
@@ -194,7 +194,7 @@
       ],
       "tags": [
         "TypeScript",
-        "Node 20+",
+        "Node 22+",
         "Offline"
       ],
       "out": "project.svg"

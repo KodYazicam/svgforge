@@ -347,7 +347,7 @@ svgforge project \
   --item "Themes=16" \
   --item "Runtime deps=0" \
   --tag "TypeScript" \
-  --tag "Node 20+" \
+  --tag "Node 22+" \
   --tag "Offline" \
   -o examples/project.svg
 ```

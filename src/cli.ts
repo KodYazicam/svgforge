@@ -64,6 +64,7 @@ Card types (see below for their flags):
   divider progress donut chart links quote code project wave
   timeline contributions
   counter sparkline gauge radar columns rating figure mark
+  profile steps pills callout compare social checklist cover
 
 Card flags:
   banner    --title --subtitle [--tag text] [--logo text] [--gradient #aabbcc,#111111]
@@ -235,8 +236,8 @@ function demoCards(common: Common): Array<{ file: string; card: Card }> {
   const b = base(common);
   return [
     { file: "banner.svg", card: { ...b, type: "banner", title: "svgforge", subtitle: "Generate README SVGs locally" } },
-    { file: "wave.svg", card: { ...b, type: "wave", title: "svgforge", subtitle: "one command, twenty-four cards" } },
-    { file: "stats.svg", card: { ...b, type: "stats", title: "Stats", items: [{ label: "Cards", value: "24" }, { label: "Themes", value: "16" }, { label: "Deps", value: "0" }] } },
+    { file: "wave.svg", card: { ...b, type: "wave", title: "svgforge", subtitle: "one command, thirty-two cards" } },
+    { file: "stats.svg", card: { ...b, type: "stats", title: "Stats", items: [{ label: "Cards", value: "32" }, { label: "Themes", value: "22" }, { label: "Deps", value: "0" }] } },
     { file: "skills.svg", card: { ...b, type: "skills", title: "Skills", items: [{ name: "TypeScript", level: 90 }, { name: "Python", level: 80 }] } },
     { file: "terminal.svg", card: { ...b, type: "terminal", title: "bash", lines: ["$ svgforge demo -o ./demo", "wrote demo/banner.svg", "wrote demo/wave.svg"] } },
     { file: "badge.svg", card: { ...b, type: "badge", label: "license", value: "KYAL-1.0" } },
@@ -247,7 +248,7 @@ function demoCards(common: Common): Array<{ file: string; card: Card }> {
     { file: "links.svg", card: { ...b, type: "links", items: [{ text: "GitHub", url: "https://github.com/KodYazicam/svgforge" }, { text: "Issues", url: "https://github.com/KodYazicam/svgforge/issues" }] } },
     { file: "quote.svg", card: { ...b, type: "quote", text: "No third-party render service. Your README images are files you commit.", author: "svgforge" } },
     { file: "code.svg", card: { ...b, type: "code", title: "demo.ts", lang: "ts", lineNumbers: true, lines: ["const cards = renderManifest(manifest);", "// writes one svg per card", "for (const c of cards) write(c.file, c.svg);"] } },
-    { file: "project.svg", card: { ...b, type: "project", name: "svgforge", host: "github.com/KodYazicam/svgforge", description: "Twenty-four README card types from one offline CLI. Zero dependencies, no network.", items: [{ label: "Cards", value: "24" }, { label: "Themes", value: "16" }, { label: "Runtime deps", value: "0" }], tags: ["TypeScript", "Node 20+"] } },
+    { file: "project.svg", card: { ...b, type: "project", name: "svgforge", host: "github.com/KodYazicam/svgforge", description: "Thirty-two README card types from one offline CLI. Zero dependencies, no network.", items: [{ label: "Cards", value: "32" }, { label: "Themes", value: "22" }, { label: "Runtime deps", value: "0" }], tags: ["TypeScript", "Node 22+"] } },
     { file: "timeline.svg", card: { ...b, type: "timeline", title: "Releases", items: [{ date: "2026-09-01", label: "v1.0 — five card types" }, { date: "2026-09-26", label: "quote, timeline, contributions" }, { date: "2026-09-28", label: "v2.0 — overrides + manifest vars" }] } },
     { file: "contributions.svg", card: { ...b, type: "contributions", title: "Contributions", weeks: randomWeeks(42), total: 1337 } },
     { file: "counter.svg", card: { ...b, type: "counter", title: "npm downloads", value: 1337, prefix: "", suffix: "/mo" } },

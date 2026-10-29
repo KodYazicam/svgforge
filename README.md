@@ -9,7 +9,7 @@
 
 <p align="center">
   <a href="https://github.com/KodYazicam/svgforge/actions"><img src="https://img.shields.io/github/actions/workflow/status/KodYazicam/svgforge/ci.yml?style=flat-square" alt="CI"></a>
-  <img src="https://img.shields.io/badge/node-%3E%3D20-339933?style=flat-square" alt="Node">
+  <img src="https://img.shields.io/badge/node-%3E%3D22-339933?style=flat-square" alt="Node">
   <img src="https://img.shields.io/badge/license-KYAL--1.0-7C3AED?style=flat-square" alt="License">
   <img src="https://img.shields.io/badge/author-KodYazicam-0D0D0D?style=flat-square" alt="Author">
 </p>
@@ -19,12 +19,21 @@
 capsule-render, github-readme-stats, and typing SVGs look great until the CDN is down or the theme breaks. **svgforge** writes the same kind of cards as files you commit. GitHub serves them from your repo. No camo outage, no rate limit, no query-string theme API.
 
 ```bash
-git clone https://github.com/KodYazicam/svgforge.git
-cd svgforge && npm ci && npm run build
-node dist/cli.js banner --title mytool --subtitle "Pack a codebase into LLM context" -o assets/banner.svg
+npm install -g @kodyazicam/svgforge
+svgforge banner --title mytool --subtitle "Pack a codebase into LLM context" -o assets/banner.svg
 ```
 
-After `npm ci && npm run build`, the CLI is `node dist/cli.js`. `npm link` in this clone puts `svgforge` on your PATH. From another project that file-depends on this repo:
+You can also run it without a global install:
+
+```bash
+npx @kodyazicam/svgforge banner --title mytool -o assets/banner.svg
+```
+
+From another project, install the library:
+
+```bash
+npm install @kodyazicam/svgforge
+```
 
 ```ts
 import { banner } from "@kodyazicam/svgforge";
@@ -75,7 +84,26 @@ import { banner } from "@kodyazicam/svgforge";
 
 ## Install
 
-Not on npm. Clone and build:
+Global CLI:
+
+```bash
+npm install -g @kodyazicam/svgforge
+svgforge banner --title hello -o banner.svg
+```
+
+One-off use:
+
+```bash
+npx @kodyazicam/svgforge banner --title hello -o banner.svg
+```
+
+Library:
+
+```bash
+npm install @kodyazicam/svgforge
+```
+
+From source:
 
 ```bash
 git clone https://github.com/KodYazicam/svgforge.git
@@ -257,7 +285,7 @@ Per-card `theme` overrides the manifest default. If `out` is omitted, files are 
 
 ## Library
 
-After `npm install /path/to/svgforge` (this clone):
+After `npm install @kodyazicam/svgforge`:
 
 ```ts
 import { banner, donut, renderManifest, THEMES } from "@kodyazicam/svgforge";
@@ -325,7 +353,7 @@ Fonts are generic (`ui-monospace`, `ui-sans-serif`) so GitHub’s renderer does 
 
 **Can I edit the SVG in Figma?** Yes. It is plain SVG.
 
-**Is it on npm?** No. Clone this repo. The package name in `package.json` is `@kodyazicam/svgforge` so a local `npm link` does not collide with the unrelated public `svgforge` package.
+**Is it on npm?** Yes: `npm install -g @kodyazicam/svgforge` or `npx @kodyazicam/svgforge`. The scoped name avoids colliding with the unrelated public `svgforge` package.
 
 ## License — KYAL-1.0
 

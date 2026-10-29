@@ -5,6 +5,21 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.1] - 2026-10-29
+
+### Added
+
+- npm package metadata: `publishConfig.access`, `prepack`, `prepublishOnly`, `sideEffects`, `bugs`, and the npm-facing files list.
+- `examples/`, `ALL-SVG-FORMS.md`, and `CHANGELOG.md` now ship in the npm tarball.
+- README install paths for `npm install -g`, `npx`, and the library package.
+
+### Fixed
+
+- `svgforge` now runs when invoked through the npm bin symlink. The entry-point check resolves real paths instead of comparing the symlink path to `dist/cli.js`.
+- `contributions` accepts `seed` and `density` in manifests, matching the CLI. `examples/demo.json` now really uses its seed.
+- `demo` and help output report 32 cards and 22 themes instead of the stale 24 / 16 counts.
+- README Node badge and example tags now say Node 22+.
+
 ## [2.5.0] - 2026-09-29
 
 ### Added

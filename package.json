@@ -1,12 +1,17 @@
 {
   "name": "@kodyazicam/svgforge",
-  "version": "2.5.0",
-  "private": true,
+  "version": "2.5.1",
+  "publishConfig": {
+    "access": "public"
+  },
   "description": "Generate GitHub README SVGs locally. 32 card types, 22 themes, no third-party render service.",
   "keywords": [
     "svg",
     "readme",
     "github",
+    "github-readme",
+    "readme-generator",
+    "svg-generator",
     "badge",
     "card",
     "cli",
@@ -22,7 +27,11 @@
     "type": "git",
     "url": "https://github.com/KodYazicam/svgforge.git"
   },
+  "bugs": {
+    "url": "https://github.com/KodYazicam/svgforge/issues"
+  },
   "type": "module",
+  "sideEffects": false,
   "bin": {
     "svgforge": "./dist/cli.js"
   },
@@ -37,7 +46,10 @@
   "files": [
     "dist",
     "LICENSE",
-    "README.md"
+    "README.md",
+    "CHANGELOG.md",
+    "ALL-SVG-FORMS.md",
+    "examples"
   ],
   "engines": {
     "node": ">=22"
@@ -45,6 +57,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "test": "vitest run",
+    "prepack": "npm run build",
+    "prepublishOnly": "npm test && npm run typecheck",
     "examples": "node dist/cli.js render examples/demo.json -o examples/",
     "typecheck": "tsc -p tsconfig.build.json --noEmit"
   },

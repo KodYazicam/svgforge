@@ -1,6 +1,7 @@
-import { mkdtempSync, writeFileSync, readFileSync, existsSync } from "node:fs";
+import { mkdtempSync, writeFileSync, readFileSync, existsSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
 import { banner } from "../src/cards/banner.js";
 import { stats } from "../src/cards/stats.js";
@@ -29,6 +30,7 @@ import { renderManifest, renderCard, safeOutputPath, substituteVars, CARD_TYPES,
 import { rating } from "../src/cards/rating.js";
 import { escapeXml, THEMES, resolveTheme, applyOverrides, isValidColor, mixHex, seededRandom, scaleSvg, wrapLines } from "../src/escape.js";
 import { run } from "../src/cli.js";
+import { invokedDirectly } from "../src/main.js";
 
 describe("cards", () => {
   it("escapes XML in titles", () => {
@@ -113,6 +115,7 @@ describe("cards", () => {
     const contribSvg = contributions({ title: "Contributions", weeks, total: 1337 });
     expect(contribSvg).toContain("1337");
     expect(contribSvg).toContain("rect");
+    expect(contributions({ title: "Contributions", seed: 42, total: 1337 })).toBe(contribSvg);
     const colors = levelColors("#0f0c29", "#a78bfa");
     expect(colors).toHaveLength(5);
     expect(colors.every((color) => /^#[0-9a-f]{6}$/.test(color))).toBe(true);
@@ -213,6 +216,21 @@ describe("links safety", () => {
 });
 
 describe("manifest + cli", () => {
+  it.skipIf(process.platform === "win32")("recognises an npm bin symlink as the entry point", () => {
+    const dir = mkdtempSync(join(tmpdir(), "svgforge-bin-"));
+    const target = join(dir, "cli.js");
+    writeFileSync(target, "// cli\n");
+    const link = join(dir, "svgforge");
+    symlinkSync(target, link);
+    const previous = process.argv[1];
+    process.argv[1] = link;
+    try {
+      expect(invokedDirectly(pathToFileURL(target).href)).toBe(true);
+    } finally {
+      process.argv[1] = previous;
+    }
+  });
+
   it("renders a json manifest to files", () => {
     const dir = mkdtempSync(join(tmpdir(), "svgforge-"));
     const manifest = join(dir, "m.json");

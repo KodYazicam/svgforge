@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="640" height="260" viewBox="0 0 640 260" role="img" aria-label="figure embeds any https image">
 
+  <desc>External image — may not render in GitHub README</desc>
   <defs>
     <clipPath id="fig-640x260x184">
       <rect x="12" y="12" width="616" height="184" rx="8"/>
