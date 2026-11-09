@@ -28,7 +28,7 @@ import { figure } from "../src/cards/figure.js";
 import { mark } from "../src/cards/mark.js";
 import { renderManifest, renderCard, safeOutputPath, substituteVars, CARD_TYPES, type Card } from "../src/render.js";
 import { rating } from "../src/cards/rating.js";
-import { escapeXml, THEMES, resolveTheme, applyOverrides, isValidColor, mixHex, seededRandom, scaleSvg, wrapLines } from "../src/escape.js";
+import { escapeXml, THEMES, resolveTheme, applyOverrides, isValidColor, mixHex, seededRandom, scaleSvg, wrapLines, shadowFilter, shadowAttr, approxTextWidth } from "../src/escape.js";
 import { run } from "../src/cli.js";
 import { invokedDirectly } from "../src/main.js";
 
@@ -331,6 +331,8 @@ describe("manifest + cli", () => {
   });
 
   it("rejects invalid flag values from the cli", () => {
+    expect(run(["--version"])).toBe(0);
+    expect(run(["banner", "--title", "x", "--scale", "2", "--border-width", "3"])).toBe(0);
     expect(run(["banner", "--title", "x", "--bg", "red"])).toBe(1);
     expect(run(["banner", "--title", "x", "--width", "abc"])).toBe(1);
     expect(run(["badge", "--label", "a", "--value", "b", "--style", "nope"])).toBe(1);
@@ -354,6 +356,24 @@ describe("manifest + cli", () => {
     expect(scaled).toContain('width="440"');
     expect(scaled).toContain('viewBox="0 0 880 160"');
     expect(stats({ items: [{ label: "A", value: 1 }], borderWidth: 0 })).toContain('stroke-width="0"');
+  });
+
+  it("covers mark shapes, gradients, and syntax comments", () => {
+    expect(mark({ letter: "AB", shape: "circle" })).toContain("<circle");
+    const square = mark({ letter: "ABC", shape: "square", radius: 4, gradient: ["#111111", "#222222"] });
+    expect(square).toContain("linearGradient");
+    expect(square).toContain('rx="4"');
+    expect(() => mark({ letter: "A", gradient: ["red", "#222222"] })).toThrow(/gradient/);
+    expect(code({ lines: ["# comment", "print('x')"], lang: "python" })).toContain("comment");
+    expect(code({ lines: ["// comment", "const x = 1;"], lineNumbers: true })).toContain('font-size="12"');
+  });
+
+  it("exposes shadow helpers and text width estimates", () => {
+    expect(shadowFilter("demo", true)).toContain("feDropShadow");
+    expect(shadowFilter("demo", false)).toBe("");
+    expect(shadowAttr("demo", true)).toContain('filter="url(#demo)"');
+    expect(shadowAttr("demo", false)).toBe("");
+    expect(approxTextWidth("abc", 10)).toBe(18);
   });
 
   it("renders every card type as one svg document", () => {
