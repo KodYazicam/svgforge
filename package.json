@@ -56,7 +56,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "test": "vitest run",
+    "test": "vitest run --coverage",
     "prepack": "npm run build",
     "prepublishOnly": "npm test && npm run typecheck",
     "examples": "node dist/cli.js render examples/demo.json -o examples/",
