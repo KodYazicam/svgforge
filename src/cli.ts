@@ -119,7 +119,7 @@ Manifest:
     "cards": [ { "type": "banner", "title": "{{user}}", "out": "banner.svg" } ] }
   {{var}} placeholders are replaced everywhere; --set overrides vars.
 
-License: KYAL-1.0 — free to use, attribution required.
+License: Apache-2.0.
 https://github.com/KodYazicam/svgforge
 `.trim();
 }
@@ -240,7 +240,7 @@ function demoCards(common: Common): Array<{ file: string; card: Card }> {
     { file: "stats.svg", card: { ...b, type: "stats", title: "Stats", items: [{ label: "Cards", value: "32" }, { label: "Themes", value: "22" }, { label: "Deps", value: "0" }] } },
     { file: "skills.svg", card: { ...b, type: "skills", title: "Skills", items: [{ name: "TypeScript", level: 90 }, { name: "Python", level: 80 }] } },
     { file: "terminal.svg", card: { ...b, type: "terminal", title: "bash", lines: ["$ svgforge demo -o ./demo", "wrote demo/banner.svg", "wrote demo/wave.svg"] } },
-    { file: "badge.svg", card: { ...b, type: "badge", label: "license", value: "KYAL-1.0" } },
+    { file: "badge.svg", card: { ...b, type: "badge", label: "license", value: "Apache-2.0" } },
     { file: "divider.svg", card: { ...b, type: "divider", label: "more cards" } },
     { file: "progress.svg", card: { ...b, type: "progress", title: "v2.0", value: 68, caption: "roadmap: 68 of 100 items" } },
     { file: "donut.svg", card: { ...b, type: "donut", title: "Time", items: [{ label: "Code", value: 55 }, { label: "Docs", value: 30 }, { label: "Tests", value: 15 }], center: "24h" } },
