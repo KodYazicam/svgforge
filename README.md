@@ -10,7 +10,7 @@
 <p align="center">
   <a href="https://github.com/KodYazicam/svgforge/actions"><img src="https://img.shields.io/github/actions/workflow/status/KodYazicam/svgforge/ci.yml?style=flat-square" alt="CI"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D22-339933?style=flat-square" alt="Node">
-  <img src="https://img.shields.io/badge/license-KYAL--1.0-7C3AED?style=flat-square" alt="License">
+  <img src="https://img.shields.io/badge/license-Apache--2.0-2ea44f?style=flat-square" alt="License">
   <img src="https://img.shields.io/badge/author-KodYazicam-0D0D0D?style=flat-square" alt="Author">
 </p>
 
@@ -75,7 +75,7 @@ import { banner } from "@kodyazicam/svgforge";
 - [Escaping and limits](#escaping-and-limits)
 - [Troubleshooting](#troubleshooting)
 - [FAQ](#faq)
-- [License](#license--kyal-10)
+- [License](#license)
 
 ## Requirements
 
@@ -122,7 +122,7 @@ svgforge banner --title myapp --subtitle "Catch webhooks" --theme tokyonight -o 
 svgforge stats --item Stars=12 --item Forks=3 -o stats.svg
 svgforge skills --item TypeScript=90 --item Python=80 --show-value -o skills.svg
 svgforge terminal --line "$ myapp --port 4242" --line "listening" --caret -o term.svg
-svgforge badge --label license --value KYAL-1.0 --style plastic -o badge.svg
+svgforge badge --label license --value Apache-2.0 --style plastic -o badge.svg
 svgforge divider --label "more below" -o divider.svg
 svgforge progress --value 68 --caption "roadmap" -o progress.svg
 svgforge donut --item Code=55 --item Docs=30 --item Tests=15 --center 100% -o donut.svg
@@ -251,7 +251,7 @@ svgforge --help | --version
 ```json
 {
   "theme": "midnight",
-  "vars": { "tool": "mytool", "license": "KYAL-1.0" },
+  "vars": { "tool": "mytool", "license": "Apache-2.0" },
   "cards": [
     {
       "type": "banner",
@@ -299,7 +299,7 @@ const svg = banner({
 const files = renderManifest({
   theme: "midnight",
   vars: { tool: "mytool" },
-  cards: [{ type: "badge", label: "license", value: "KYAL-1.0", out: "badge.svg" }],
+  cards: [{ type: "badge", label: "license", value: "Apache-2.0", out: "badge.svg" }],
 });
 ```
 
@@ -355,16 +355,10 @@ Fonts are generic (`ui-monospace`, `ui-sans-serif`) so GitHub’s renderer does 
 
 **Is it on npm?** Yes: `npm install -g @kodyazicam/svgforge` or `npx @kodyazicam/svgforge`. The scoped name avoids colliding with the unrelated public `svgforge` package.
 
-## License — KYAL-1.0
+## License
 
-Free to use and modify. **Attribution is mandatory.**
+Apache-2.0. See [LICENSE](./LICENSE).
 
-```
-Author : Batuhan (KodYazicam)
-Project: svgforge
-Source : https://github.com/KodYazicam/svgforge
-```
-
-See [LICENSE](./LICENSE).
+Commercial use, modification, and distribution are permitted under the Apache License 2.0. Keep the license text with distributed copies.
 
 <p align="center"><sub>Built by <a href="https://github.com/KodYazicam">KodYazicam</a></sub></p>

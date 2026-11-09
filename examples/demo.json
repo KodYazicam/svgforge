@@ -31,7 +31,7 @@
         },
         {
           "label": "License",
-          "value": "KYAL-1.0"
+          "value": "Apache-2.0"
         }
       ],
       "out": "stats.svg"
@@ -78,7 +78,7 @@
     {
       "type": "badge",
       "label": "license",
-      "value": "KYAL-1.0",
+      "value": "Apache-2.0",
       "out": "badge.svg"
     },
     {

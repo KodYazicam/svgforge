@@ -20,7 +20,7 @@
     "chart",
     "wave"
   ],
-  "license": "SEE LICENSE IN LICENSE",
+  "license": "Apache-2.0",
   "author": "Batuhan (KodYazicam) <https://github.com/KodYazicam>",
   "homepage": "https://github.com/KodYazicam/svgforge",
   "repository": {
@@ -60,10 +60,12 @@
     "prepack": "npm run build",
     "prepublishOnly": "npm test && npm run typecheck",
     "examples": "node dist/cli.js render examples/demo.json -o examples/",
-    "typecheck": "tsc -p tsconfig.build.json --noEmit"
+    "typecheck": "tsc -p tsconfig.build.json --noEmit",
+    "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
+    "@vitest/coverage-v8": "^2.1.9",
     "typescript": "^5.7.0",
     "vitest": "^2.1.0"
   }

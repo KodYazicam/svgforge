@@ -81,7 +81,7 @@ svgforge stats \
   --title "Open source" \
   --item "Tools shipped=5" \
   --item "Stack=TS · Python · Discord" \
-  --item "License=KYAL-1.0" \
+  --item "License=Apache-2.0" \
   -o examples/stats.svg
 ```
 
@@ -153,7 +153,7 @@ A shields-style pill. Size adapts to the text length.
 ![badge](examples/badge.svg)
 
 ```bash
-svgforge badge --label license --value KYAL-1.0 -o examples/badge.svg
+svgforge badge --label license --value Apache-2.0 -o examples/badge.svg
 ```
 
 | Flag | Effect |
@@ -907,7 +907,7 @@ svgforge render profile.json -o ./assets --set user=hookyard
   "vars": { "tool": "ctxpack" },
   "cards": [
     { "type": "banner", "title": "{{tool}}", "out": "banner.svg" },
-    { "type": "badge", "label": "license", "value": "KYAL-1.0", "out": "badge.svg" }
+    { "type": "badge", "label": "license", "value": "Apache-2.0", "out": "badge.svg" }
   ]
 }
 ```

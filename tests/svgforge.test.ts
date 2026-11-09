@@ -44,7 +44,7 @@ describe("cards", () => {
     expect(stats({ items: [{ label: "Stars", value: 12 }] })).toContain("Stars");
     expect(skills({ items: [{ name: "TS", level: 80 }] })).toContain("rect");
     expect(terminal({ lines: ["$ ls", "ok"] })).toContain("$ ls");
-    expect(badge({ label: "license", value: "KYAL-1.0" })).toContain("KYAL-1.0");
+    expect(badge({ label: "license", value: "Apache-2.0" })).toContain("Apache-2.0");
   });
 
   it("clamps skill bars and namespaces banner gradients", () => {
@@ -240,7 +240,7 @@ describe("manifest + cli", () => {
         theme: "tokyonight",
         cards: [
           { type: "banner", title: "ctxpack", subtitle: "pack", out: "banner.svg" },
-          { type: "badge", label: "license", value: "KYAL-1.0", out: "badge.svg" },
+          { type: "badge", label: "license", value: "Apache-2.0", out: "badge.svg" },
         ],
       }),
     );
