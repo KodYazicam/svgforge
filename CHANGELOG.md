@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added a documentation coverage test that verifies every card type has a section, a demo entry, and a rendered example.
 
+### Security
+
+- Upgraded `vitest` and `@vitest/coverage-v8` to 5.1.0, clearing the dev-only
+  dependency advisories. Added tests for mark shapes, syntax comments, shadow
+  helpers, and CLI scale/border flags.
+
 ## [2.5.3] - 2026-10-29
 
 ### Changed
