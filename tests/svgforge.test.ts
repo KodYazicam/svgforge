@@ -157,6 +157,38 @@ function themeAccent2(): string {
   return resolveTheme("midnight").accent2;
 }
 
+describe("documentation coverage", () => {
+  it("has a section, a manifest entry, and a rendered example for every card type", () => {
+    const root = process.cwd();
+    const doc = readFileSync(join(root, "ALL-SVG-FORMS.md"), "utf8");
+    const demo = JSON.parse(readFileSync(join(root, "examples", "demo.json"), "utf8")) as {
+      cards: Array<{ type: string; out: string }>;
+    };
+    const covered = new Set<string>();
+
+    for (const type of CARD_TYPES) {
+      const heading = `## ${type}`;
+      const start = doc.indexOf(heading);
+      expect(start, `missing section for ${type}`).toBeGreaterThanOrEqual(0);
+      const next = doc.indexOf("\n## ", start + heading.length);
+      const section = doc.slice(start, next === -1 ? undefined : next);
+
+      expect(section, `${type} has no rendered example`).toContain("examples/");
+      expect(section, `${type} has no shell command`).toContain("```bash");
+
+      const demoCard = demo.cards.find((card) => card.type === type);
+      expect(demoCard, `${type} is missing from examples/demo.json`).toBeTruthy();
+      expect(
+        existsSync(join(root, "examples", demoCard!.out)),
+        `${demoCard!.out} is missing`,
+      ).toBe(true);
+      covered.add(type);
+    }
+
+    expect(covered.size).toBe(CARD_TYPES.length);
+  });
+});
+
 describe("themes and overrides", () => {
   it("ships twenty-two themes", () => {
     expect(Object.keys(THEMES)).toHaveLength(22);
