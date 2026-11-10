@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `svgforge init [dir]` scaffolds `svgforge.json` (banner + stats) and
+  `assets/README.md` with the render command and a README snippet. Existing
+  files are preserved unless `--force` is passed, and the generated manifest
+  renders with `svgforge render svgforge.json -o assets`.
+
 ### Changed
 
 - Added a documentation coverage test that verifies every card type has a section, a demo entry, and a rendered example.
