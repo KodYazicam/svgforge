@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Published `schema/svgforge.schema.json` (JSON Schema 2020-12) for manifests:
+  top-level shape, the 32 card types, common style options, and safe `out`
+  paths. Shipped in the npm package and accepted through the optional
+  `$schema` key on the `Manifest` type.
 - `svgforge init [dir]` scaffolds `svgforge.json` (banner + stats) and
   `assets/README.md` with the render command and a README snippet. Existing
   files are preserved unless `--force` is passed, and the generated manifest

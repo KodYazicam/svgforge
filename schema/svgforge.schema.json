@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/KodYazicam/svgforge/main/schema/svgforge.schema.json",
+  "title": "svgforge manifest",
+  "description": "Manifest consumed by `svgforge render`. Card-specific options are intentionally open so new flags do not break existing manifests.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["cards"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "format": "uri-reference",
+      "description": "Optional self-reference for editors and validators. `svgforge render` ignores it."
+    },
+    "theme": {
+      "type": "string",
+      "description": "Default theme name. Unknown names fall back to midnight."
+    },
+    "vars": {
+      "type": "object",
+      "description": "{{var}} replacements applied to every string field, including out filenames.",
+      "additionalProperties": {
+        "type": ["string", "number"]
+      }
+    },
+    "cards": {
+      "type": "array",
+      "description": "One entry per rendered SVG.",
+      "items": {
+        "$ref": "#/$defs/card"
+      }
+    }
+  },
+  "$defs": {
+    "card": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "enum": [
+            "banner",
+            "stats",
+            "skills",
+            "terminal",
+            "badge",
+            "divider",
+            "progress",
+            "donut",
+            "chart",
+            "links",
+            "quote",
+            "code",
+            "project",
+            "wave",
+            "timeline",
+            "contributions",
+            "counter",
+            "sparkline",
+            "gauge",
+            "radar",
+            "columns",
+            "rating",
+            "figure",
+            "mark",
+            "profile",
+            "steps",
+            "pills",
+            "callout",
+            "compare",
+            "social",
+            "checklist",
+            "cover"
+          ],
+          "description": "One of the 32 card types."
+        },
+        "out": {
+          "$ref": "#/$defs/outPath"
+        },
+        "theme": {
+          "type": "string",
+          "description": "Per-card theme override."
+        },
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "radius": {
+          "type": "number",
+          "minimum": 0
+        },
+        "font": {
+          "type": "string"
+        },
+        "flat": {
+          "type": "boolean"
+        },
+        "borderWidth": {
+          "type": "number",
+          "minimum": 0
+        },
+        "shadow": {
+          "type": "boolean"
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "bg": {
+          "$ref": "#/$defs/color"
+        },
+        "bg2": {
+          "$ref": "#/$defs/color"
+        },
+        "fg": {
+          "$ref": "#/$defs/color"
+        },
+        "muted": {
+          "$ref": "#/$defs/color"
+        },
+        "accent": {
+          "$ref": "#/$defs/color"
+        },
+        "accent2": {
+          "$ref": "#/$defs/color"
+        },
+        "line": {
+          "$ref": "#/$defs/color"
+        }
+      }
+    },
+    "outPath": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Relative output path. Absolute paths, Windows drive paths, and '..' are rejected at render time.",
+      "pattern": "^(?!/)(?![A-Za-z]:[\\\\/])(?!.*\\.\\.).+$"
+    },
+    "color": {
+      "type": "string",
+      "pattern": "^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$"
+    }
+  }
+}
