@@ -11,7 +11,7 @@ Small, shippable steps. Upvote or comment on an issue if you want something move
 
 ## Next
 
-- [ ] `svgforge init` to scaffold an assets directory
+- [x] `svgforge init` to scaffold an assets directory
 - [ ] More accessible defaults (contrast, reduced motion)
 - [ ] A local preview server (`svgforge preview`)
 - [ ] `kodyaz` umbrella CLI

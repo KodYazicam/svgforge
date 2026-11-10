@@ -64,6 +64,7 @@ import { banner } from "@kodyazicam/svgforge";
 - [Requirements](#requirements)
 - [Install](#install)
 - [Quick start](#quick-start)
+- [Scaffold a project](#scaffold-a-project)
 - [Card types](#card-types)
 - [Themes](#themes)
 - [Custom colors and layout](#custom-colors-and-layout)
@@ -118,6 +119,14 @@ node dist/cli.js banner --title hello -o banner.svg
 ## Quick start
 
 ```bash
+svgforge init my-project
+cd my-project
+svgforge render svgforge.json -o assets
+```
+
+Or render a single card anywhere:
+
+```bash
 svgforge banner --title myapp --subtitle "Catch webhooks" --theme tokyonight -o banner.svg
 svgforge stats --item Stars=12 --item Forks=3 -o stats.svg
 svgforge skills --item TypeScript=90 --item Python=80 --show-value -o skills.svg
@@ -156,6 +165,21 @@ svgforge themes
 ```
 
 Without `-o` / `--out`, SVG goes to stdout (redirect with `> file.svg`).
+
+## Scaffold a project
+
+`svgforge init [dir]` writes two files:
+
+- `svgforge.json` — a banner + stats manifest with `{{project}}`, `{{tagline}}`, and `{{license}}` vars
+- `assets/README.md` — the render command and a README snippet
+
+```bash
+svgforge init my-project
+cd my-project
+svgforge render svgforge.json -o assets
+```
+
+Then edit the manifest, rerun `render`, and commit `assets/*.svg`. `init` refuses to touch an existing `svgforge.json` or `assets/README.md` unless you pass `--force`; other files are left alone.
 
 ## Card types
 
@@ -236,11 +260,14 @@ Bad colors (`red`) and bad sizes (`--width abc`) exit 1 with the flag named in t
 
 ```text
 svgforge <card-type> [flags] [-o file.svg]
+svgforge init [dir] [--force]
 svgforge render manifest.json -o ./outdir [--set key=value]
 svgforge demo [-o ./svgforge-demo]
 svgforge themes | types
 svgforge --help | --version
 ```
+
+`init` scaffolds a project (see [Scaffold a project](#scaffold-a-project)); `--force` replaces `svgforge.json` and `assets/README.md`.
 
 `demo` writes one sample of each of the 32 card types — the fastest way to see everything a theme can do. `render` writes one file per card. Nested `out` paths are created (`assets/hero/banner.svg`) **inside** `-o`.
 

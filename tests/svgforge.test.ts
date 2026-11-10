@@ -1,4 +1,4 @@
-import { mkdtempSync, writeFileSync, readFileSync, existsSync, symlinkSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -441,5 +441,57 @@ describe("manifest + cli", () => {
     expect(readFileSync(join(dir, "c.svg"), "utf8")).toContain("10");
     expect(run(["contributions"])).toBe(1);
     expect(run(["timeline"])).toBe(1);
+  });
+});
+
+describe("init", () => {
+  it("scaffolds a project whose manifest renders", () => {
+    const parent = mkdtempSync(join(tmpdir(), "svgforge-init-"));
+    const dir = join(parent, "site");
+    expect(run(["init", dir])).toBe(0);
+    expect(existsSync(join(dir, "assets"))).toBe(true);
+    const manifestPath = join(dir, "svgforge.json");
+    const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as {
+      cards: Array<{ type: string; out?: string }>;
+    };
+    expect(manifest.cards.map((card) => card.type)).toEqual(["banner", "stats"]);
+    expect(readFileSync(join(dir, "assets", "README.md"), "utf8")).toContain(
+      "svgforge render svgforge.json -o assets",
+    );
+
+    expect(run(["render", manifestPath, "-o", join(dir, "assets")])).toBe(0);
+    expect(readFileSync(join(dir, "assets", "banner.svg"), "utf8")).toContain("my-project");
+    expect(readFileSync(join(dir, "assets", "stats.svg"), "utf8")).toContain("Apache-2.0");
+    expect(existsSync(join(dir, "assets", "README.md"))).toBe(true);
+  });
+
+  it("preserves existing files unless --force", () => {
+    const dir = mkdtempSync(join(tmpdir(), "svgforge-init-"));
+    const custom = '{"cards":[]}\n';
+    writeFileSync(join(dir, "svgforge.json"), custom);
+    expect(run(["init", dir])).toBe(1);
+    expect(readFileSync(join(dir, "svgforge.json"), "utf8")).toBe(custom);
+    expect(existsSync(join(dir, "assets"))).toBe(false);
+
+    expect(run(["init", dir, "--force"])).toBe(0);
+    const manifest = JSON.parse(readFileSync(join(dir, "svgforge.json"), "utf8")) as { cards: unknown[] };
+    expect(manifest.cards.length).toBe(2);
+  });
+
+  it("does not overwrite assets/README.md without --force", () => {
+    const dir = mkdtempSync(join(tmpdir(), "svgforge-init-"));
+    mkdirSync(join(dir, "assets"));
+    writeFileSync(join(dir, "assets", "README.md"), "keep me\n");
+    expect(run(["init", dir])).toBe(1);
+    expect(readFileSync(join(dir, "assets", "README.md"), "utf8")).toBe("keep me\n");
+    expect(existsSync(join(dir, "svgforge.json"))).toBe(false);
+    expect(run(["init", dir, "-f"])).toBe(0);
+    expect(readFileSync(join(dir, "assets", "README.md"), "utf8")).toContain("Scaffolded by");
+  });
+
+  it("rejects unknown init flags", () => {
+    const dir = mkdtempSync(join(tmpdir(), "svgforge-init-"));
+    expect(run(["init", dir, "--nope"])).toBe(1);
+    expect(existsSync(join(dir, "svgforge.json"))).toBe(false);
   });
 });
