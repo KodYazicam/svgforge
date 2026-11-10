@@ -17,9 +17,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `assets/README.md` with the render command and a README snippet. Existing
   files are preserved unless `--force` is passed, and the generated manifest
   renders with `svgforge render svgforge.json -o assets`.
+- Exported `contrastRatio` and `relativeLuminance` for auditing theme and
+  custom colors.
 
 ### Changed
 
+- Built-in themes now meet WCAG AA contrast: `text` and `muted` reach 4.5:1
+  against both background stops, and `accent` reaches 3:1. Eight themes had
+  their muted color adjusted, and `solarized-light` also had its text color
+  darkened. `midnight` output is unchanged.
+- Documented static-by-default motion, `role="img"` labels, and color-override
+  caveats in the README.
 - Added a documentation coverage test that verifies every card type has a section, a demo entry, and a rendered example.
 
 ### Security

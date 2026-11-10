@@ -74,6 +74,7 @@ import { banner } from "@kodyazicam/svgforge";
 - [Library](#library)
 - [GitHub README usage](#github-readme-usage)
 - [Escaping and limits](#escaping-and-limits)
+- [Accessibility](#accessibility)
 - [Troubleshooting](#troubleshooting)
 - [FAQ](#faq)
 - [License](#license)
@@ -333,7 +334,7 @@ const files = renderManifest({
 });
 ```
 
-Exports: `banner`, `stats`, `skills`, `terminal`, `badge`, `divider`, `progress`, `donut`, `chart`, `links`, `quote`, `code`, `project`, `wave`, `timeline`, `contributions`, `randomWeeks`, `levelColors`, `counter`, `sparkline`, `gauge`, `radar`, `columns`, `rating`, `figure`, `mark`, `profile`, `steps`, `pills`, `callout`, `compare`, `social`, `checklist`, `cover`, `renderCard`, `renderManifest`, `safeOutputPath`, `substituteVars`, `CARD_TYPES`, `THEMES`, `FONT_MONO`, `FONT_SANS`.
+Exports: `banner`, `stats`, `skills`, `terminal`, `badge`, `divider`, `progress`, `donut`, `chart`, `links`, `quote`, `code`, `project`, `wave`, `timeline`, `contributions`, `randomWeeks`, `levelColors`, `counter`, `sparkline`, `gauge`, `radar`, `columns`, `rating`, `figure`, `mark`, `profile`, `steps`, `pills`, `callout`, `compare`, `social`, `checklist`, `cover`, `renderCard`, `renderManifest`, `safeOutputPath`, `substituteVars`, `CARD_TYPES`, `THEMES`, `FONT_MONO`, `FONT_SANS`, `contrastRatio`, `relativeLuminance`.
 
 Every card options object takes the same optional fields as the CLI flags (`theme`, `bg`, `fg`, `accent`, `width`, `radius`, `font`, …).
 
@@ -358,6 +359,20 @@ All user strings go through `escapeXml` (`& < > " '`). Titles like `A&B <C>` wil
 Skill `level` is clamped to 0–100. Non-numeric CLI values become 0. `progress` accepts `68` or `68%`. `chart` bars scale to your largest value.
 
 Fonts are generic (`ui-monospace`, `ui-sans-serif`) so GitHub’s renderer does not need webfonts.
+
+## Accessibility
+
+- Every card is wrapped in `<svg role="img">` with an `aria-label` from its title or card type.
+- Output is static by default. `wave --animate` and `terminal --caret` opt into SMIL animation; leave them off when you need reduced motion. GitHub may strip SMIL anyway, so static is the safe default.
+- Built-in themes keep `text` and `muted` at WCAG AA (4.5:1) against both background stops, and `accent` at 3:1. The library exports `relativeLuminance(hex)` and `contrastRatio(fg, bg)` if you add or audit custom colors.
+- Custom `--bg`, `--fg`, `--muted`, and other color overrides are not audited. Check them before shipping:
+
+```ts
+import { contrastRatio } from "@kodyazicam/svgforge";
+contrastRatio("#ffffff", "#0f0c29"); // ~19
+```
+
+- `figure --alt "text"` sets the embedded image's own accessible label.
 
 ## Troubleshooting
 
