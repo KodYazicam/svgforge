@@ -11,7 +11,7 @@
   <rect width="880" height="160" rx="16" fill="url(#grad-solarized-lightsolarized-650b3238)"/>
   <circle cx="810" cy="40" r="90" fill="#d33682" fill-opacity="0.18"/>
   <text x="44" y="48" fill="#268bd2" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" letter-spacing="3">THEME</text>
-  <text x="44" y="84" fill="#586e75" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="40" font-weight="700">solarized-light</text>
-  <text x="44" y="120" fill="#93a1a1" font-family="ui-sans-serif, system-ui, sans-serif" font-size="18">svgforge theme</text>
+  <text x="44" y="84" fill="#53676e" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="40" font-weight="700">solarized-light</text>
+  <text x="44" y="120" fill="#5d6666" font-family="ui-sans-serif, system-ui, sans-serif" font-size="18">svgforge theme</text>
 
 </svg>

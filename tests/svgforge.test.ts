@@ -28,7 +28,7 @@ import { figure } from "../src/cards/figure.js";
 import { mark } from "../src/cards/mark.js";
 import { renderManifest, renderCard, safeOutputPath, substituteVars, CARD_TYPES, type Card } from "../src/render.js";
 import { rating } from "../src/cards/rating.js";
-import { escapeXml, THEMES, resolveTheme, applyOverrides, isValidColor, mixHex, seededRandom, scaleSvg, wrapLines, shadowFilter, shadowAttr, approxTextWidth } from "../src/escape.js";
+import { escapeXml, THEMES, resolveTheme, applyOverrides, isValidColor, mixHex, seededRandom, scaleSvg, wrapLines, shadowFilter, shadowAttr, approxTextWidth, contrastRatio, relativeLuminance } from "../src/escape.js";
 import { run } from "../src/cli.js";
 import { invokedDirectly } from "../src/main.js";
 
@@ -135,6 +135,16 @@ describe("cards", () => {
     expect(terminal({ lines: ["> run"], prompt: ">" })).not.toContain("&#36;");
     const caretSvg = terminal({ lines: ["$ x"], caret: true });
     expect(caretSvg).toContain("<animate");
+  });
+
+  it("keeps motion opt-in and labels wrapped cards", () => {
+    expect(wave({ title: "static" })).not.toContain("<animate");
+    expect(terminal({ lines: ["$ echo hi"] })).not.toContain("<animate");
+    expect(wave({ title: "animated", animate: true })).toContain("<animateTransform");
+    expect(terminal({ lines: ["$ echo hi"], caret: true })).toContain("<animate");
+    const svg = banner({ title: "A&B" });
+    expect(svg).toContain('role="img"');
+    expect(svg).toContain('aria-label="A&amp;B"');
   });
 
   it("banner supports tag, logo, gradient, flat", () => {
@@ -253,6 +263,25 @@ describe("themes and overrides", () => {
     expect(resolveTheme("material").accent).toBe("#82aaff");
     expect(Object.keys(THEMES)).toHaveLength(22);
     expect(resolveTheme("nope").name).toBe("midnight");
+  });
+
+  it("computes WCAG relative luminance and contrast", () => {
+    expect(relativeLuminance("#000000")).toBe(0);
+    expect(relativeLuminance("#ffffff")).toBeCloseTo(1, 5);
+    expect(contrastRatio("#000000", "#ffffff")).toBeCloseTo(21, 5);
+    expect(contrastRatio("#ffffff", "#ffffff")).toBe(1);
+    expect(contrastRatio("#777777", "#ffffff")).toBeGreaterThan(4.47);
+    expect(() => contrastRatio("red", "#ffffff")).toThrow(/invalid color/);
+  });
+
+  it("keeps every built-in theme at WCAG AA contrast", () => {
+    for (const theme of Object.values(THEMES)) {
+      expect(contrastRatio(theme.text, theme.bg), `${theme.name} text/bg`).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(theme.text, theme.bg2), `${theme.name} text/bg2`).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(theme.muted, theme.bg), `${theme.name} muted/bg`).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(theme.muted, theme.bg2), `${theme.name} muted/bg2`).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(theme.accent, theme.bg), `${theme.name} accent/bg`).toBeGreaterThanOrEqual(3);
+    }
   });
 
   it("mixHex blends and seededRandom is stable", () => {

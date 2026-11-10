@@ -35,4 +35,4 @@ export { social, type SocialOptions } from "./cards/social.js";
 export { checklist, type ChecklistOptions } from "./cards/checklist.js";
 export { cover, type CoverOptions } from "./cards/cover.js";
 export { renderCard, renderManifest, safeOutputPath, substituteVars, CARD_TYPES, type Card, type Manifest } from "./render.js";
-export { THEMES, FONT_MONO, FONT_SANS, seededRandom, type Theme } from "./escape.js";
+export { THEMES, FONT_MONO, FONT_SANS, seededRandom, contrastRatio, relativeLuminance, type Theme } from "./escape.js";

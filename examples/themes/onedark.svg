@@ -12,6 +12,6 @@
   <circle cx="810" cy="40" r="90" fill="#c678dd" fill-opacity="0.18"/>
   <text x="44" y="48" fill="#61afef" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" letter-spacing="3">THEME</text>
   <text x="44" y="84" fill="#abb2bf" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="40" font-weight="700">onedark</text>
-  <text x="44" y="120" fill="#7d838f" font-family="ui-sans-serif, system-ui, sans-serif" font-size="18">svgforge theme</text>
+  <text x="44" y="120" fill="#9398a2" font-family="ui-sans-serif, system-ui, sans-serif" font-size="18">svgforge theme</text>
 
 </svg>

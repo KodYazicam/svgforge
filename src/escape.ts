@@ -101,7 +101,7 @@ export const THEMES: Record<string, Theme> = {
     bg: "#282a36",
     bg2: "#44475a",
     text: "#f8f8f2",
-    muted: "#bd93f9",
+    muted: "#cdaefa",
     accent: "#ff79c6",
     accent2: "#8be9fd",
     line: "#6272a4",
@@ -151,7 +151,7 @@ export const THEMES: Record<string, Theme> = {
     bg: "#eff1f5",
     bg2: "#e6e9ef",
     text: "#4c4f69",
-    muted: "#6c6f85",
+    muted: "#616377",
     accent: "#8839ef",
     accent2: "#1e66f5",
     line: "#bcc0cc",
@@ -161,7 +161,7 @@ export const THEMES: Record<string, Theme> = {
     bg: "#282c34",
     bg2: "#21252b",
     text: "#abb2bf",
-    muted: "#7d838f",
+    muted: "#9398a2",
     accent: "#61afef",
     accent2: "#c678dd",
     line: "#3e4451",
@@ -171,7 +171,7 @@ export const THEMES: Record<string, Theme> = {
     bg: "#272822",
     bg2: "#3e3d32",
     text: "#f8f8f2",
-    muted: "#75715e",
+    muted: "#aeaca0",
     accent: "#66d9ef",
     accent2: "#fd971f",
     line: "#49483e",
@@ -190,8 +190,8 @@ export const THEMES: Record<string, Theme> = {
     name: "solarized-light",
     bg: "#fdf6e3",
     bg2: "#eee8d5",
-    text: "#586e75",
-    muted: "#93a1a1",
+    text: "#53676e",
+    muted: "#5d6666",
     accent: "#268bd2",
     accent2: "#d33682",
     line: "#e4ddc8",
@@ -231,7 +231,7 @@ export const THEMES: Record<string, Theme> = {
     bg: "#2d353b",
     bg2: "#343f44",
     text: "#d3c6aa",
-    muted: "#9da9a0",
+    muted: "#a4b0a7",
     accent: "#a7c080",
     accent2: "#7fbbb3",
     line: "#475258",
@@ -241,7 +241,7 @@ export const THEMES: Record<string, Theme> = {
     bg: "#0b0e14",
     bg2: "#11151c",
     text: "#bfbdb6",
-    muted: "#646870",
+    muted: "#7f8389",
     accent: "#e6b450",
     accent2: "#59c2ff",
     line: "#1c212b",
@@ -251,7 +251,7 @@ export const THEMES: Record<string, Theme> = {
     bg: "#1c1e26",
     bg2: "#232530",
     text: "#d5d8da",
-    muted: "#6c6f93",
+    muted: "#8c8fab",
     accent: "#e95678",
     accent2: "#fab795",
     line: "#2e303e",
@@ -313,6 +313,30 @@ const HEX = /^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
 
 export function isValidColor(value: string): boolean {
   return HEX.test(value);
+}
+
+function hexToRgb(hex: string): [number, number, number] {
+  if (!HEX.test(hex)) throw new Error(`invalid color: ${hex} (use #rrggbb)`);
+  const raw = hex.slice(1);
+  const full = raw.length <= 4 ? raw.slice(0, 3).split("").map((c) => c + c).join("") : raw.slice(0, 6);
+  const value = Number.parseInt(full, 16);
+  return [(value >> 16) & 255, (value >> 8) & 255, value & 255];
+}
+
+export function relativeLuminance(hex: string): number {
+  const [red, green, blue] = hexToRgb(hex).map((value) => {
+    const channel = value / 255;
+    return channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+}
+
+export function contrastRatio(foreground: string, background: string): number {
+  const a = relativeLuminance(foreground);
+  const b = relativeLuminance(background);
+  const light = Math.max(a, b);
+  const dark = Math.min(a, b);
+  return (light + 0.05) / (dark + 0.05);
 }
 
 export interface StyleOverrides {
