@@ -277,6 +277,7 @@ svgforge --help | --version
 
 ```json
 {
+  "$schema": "https://raw.githubusercontent.com/KodYazicam/svgforge/main/schema/svgforge.schema.json",
   "theme": "midnight",
   "vars": { "tool": "mytool", "license": "Apache-2.0" },
   "cards": [
@@ -297,6 +298,8 @@ svgforge --help | --version
   ]
 }
 ```
+
+The manifest shape is published as JSON Schema 2020-12 at [`schema/svgforge.schema.json`](./schema/svgforge.schema.json) and ships in the npm package. Add `"$schema"` for editor completion and CI validation. The schema checks the top-level shape, the 32 `type` values, common style options, and safe `out` paths; card-specific fields stay open so new options do not break existing manifests. `svgforge render` ignores `$schema`.
 
 `{{var}}` placeholders are replaced in every card field (including `out` filenames). `--set key=value` (repeat) overrides vars from the command line — handy for regenerating a profile README with a different username:
 

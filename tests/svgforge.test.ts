@@ -189,6 +189,58 @@ describe("documentation coverage", () => {
   });
 });
 
+interface ManifestSchema {
+  $schema: string;
+  $id: string;
+  $defs: {
+    card: {
+      required: string[];
+      properties: {
+        type: { enum: string[] };
+      };
+    };
+    outPath: { pattern: string };
+  };
+}
+
+describe("manifest schema", () => {
+  it("matches the renderer's card types and safe output paths", () => {
+    const root = process.cwd();
+    const schema = JSON.parse(
+      readFileSync(join(root, "schema", "svgforge.schema.json"), "utf8"),
+    ) as ManifestSchema;
+    expect(schema.$schema).toBe("https://json-schema.org/draft/2020-12/schema");
+    expect(schema.$id).toContain("/schema/svgforge.schema.json");
+    expect(schema.$defs.card.required).toEqual(["type"]);
+    expect(schema.$defs.card.properties.type.enum).toEqual([...CARD_TYPES]);
+
+    const out = new RegExp(schema.$defs.outPath.pattern);
+    expect(out.test("banner.svg")).toBe(true);
+    expect(out.test("nested/hero.svg")).toBe(true);
+    expect(out.test("../evil.svg")).toBe(false);
+    expect(out.test("nested/../evil.svg")).toBe(false);
+    expect(out.test("/etc/passwd.svg")).toBe(false);
+    expect(out.test("C:\\evil.svg")).toBe(false);
+
+    const demo = JSON.parse(readFileSync(join(root, "examples", "demo.json"), "utf8")) as {
+      cards: Array<{ type: string; out?: string }>;
+    };
+    for (const card of demo.cards) {
+      expect(CARD_TYPES).toContain(card.type);
+      if (card.out) expect(out.test(card.out)).toBe(true);
+    }
+
+    const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as { files: string[] };
+    expect(pkg.files).toContain("schema");
+
+    const rendered = renderManifest({
+      $schema: schema.$id,
+      cards: [{ type: "banner", title: "with schema" }],
+    });
+    expect(rendered[0].svg).toContain("with schema");
+  });
+});
+
 describe("themes and overrides", () => {
   it("ships twenty-two themes", () => {
     expect(Object.keys(THEMES)).toHaveLength(22);

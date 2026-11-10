@@ -6,8 +6,8 @@ Small, shippable steps. Upvote or comment on an issue if you want something move
 
 - [x] 32 card types and 22 themes
 - [x] Manifest rendering with path confinement
-- [ ] A rendered example for every card type in `ALL-SVG-FORMS.md`
-- [ ] Stable JSON schema for manifests
+- [x] A rendered example for every card type in `ALL-SVG-FORMS.md`
+- [x] Stable JSON schema for manifests
 
 ## Next
 

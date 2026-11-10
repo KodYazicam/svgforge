@@ -102,6 +102,7 @@ export const CARD_TYPES = [
 ] as const;
 
 export interface Manifest {
+  $schema?: string;
   theme?: string;
   vars?: Record<string, string | number>;
   cards: Card[];

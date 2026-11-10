@@ -45,6 +45,7 @@
   },
   "files": [
     "dist",
+    "schema",
     "LICENSE",
     "README.md",
     "CHANGELOG.md",
