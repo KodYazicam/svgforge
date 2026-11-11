@@ -65,6 +65,7 @@ import { banner } from "@kodyazicam/svgforge";
 - [Install](#install)
 - [Quick start](#quick-start)
 - [Scaffold a project](#scaffold-a-project)
+- [Preview locally](#preview-locally)
 - [Card types](#card-types)
 - [Themes](#themes)
 - [Custom colors and layout](#custom-colors-and-layout)
@@ -123,6 +124,7 @@ node dist/cli.js banner --title hello -o banner.svg
 svgforge init my-project
 cd my-project
 svgforge render svgforge.json -o assets
+svgforge preview svgforge.json
 ```
 
 Or render a single card anywhere:
@@ -181,6 +183,17 @@ svgforge render svgforge.json -o assets
 ```
 
 Then edit the manifest, rerun `render`, and commit `assets/*.svg`. `init` refuses to touch an existing `svgforge.json` or `assets/README.md` unless you pass `--force`; other files are left alone.
+
+## Preview locally
+
+`svgforge preview [manifest] [--port 4321]` serves a gallery of every card on `http://127.0.0.1:4321`:
+
+```bash
+svgforge preview svgforge.json
+svgforge preview examples/demo.json --port 4400
+```
+
+The server re-reads the manifest on every request, so edit the JSON and refresh the browser. It binds loopback only and serves only the `out` files declared by the manifest; it does not browse the filesystem. Ctrl+C stops it. Invalid manifests show the renderer error instead of a blank page.
 
 ## Card types
 
@@ -262,13 +275,14 @@ Bad colors (`red`) and bad sizes (`--width abc`) exit 1 with the flag named in t
 ```text
 svgforge <card-type> [flags] [-o file.svg]
 svgforge init [dir] [--force]
+svgforge preview [manifest] [--port 4321]
 svgforge render manifest.json -o ./outdir [--set key=value]
 svgforge demo [-o ./svgforge-demo]
 svgforge themes | types
 svgforge --help | --version
 ```
 
-`init` scaffolds a project (see [Scaffold a project](#scaffold-a-project)); `--force` replaces `svgforge.json` and `assets/README.md`.
+`init` scaffolds a project (see [Scaffold a project](#scaffold-a-project)); `--force` replaces `svgforge.json` and `assets/README.md`. `preview` serves a loopback gallery (see [Preview locally](#preview-locally)).
 
 `demo` writes one sample of each of the 32 card types — the fastest way to see everything a theme can do. `render` writes one file per card. Nested `out` paths are created (`assets/hero/banner.svg`) **inside** `-o`.
 

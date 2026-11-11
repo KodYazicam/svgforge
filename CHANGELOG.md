@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   renders with `svgforge render svgforge.json -o assets`.
 - Exported `contrastRatio` and `relativeLuminance` for auditing theme and
   custom colors.
+- `svgforge preview [manifest] [--port 4321]` serves a loopback gallery of
+  every rendered card. It re-reads the manifest on each request, serves only
+  declared outputs, and reports manifest errors in the page.
 
 ### Changed
 
