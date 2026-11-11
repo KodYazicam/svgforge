@@ -583,11 +583,12 @@ describe("init", () => {
 async function withPreview(
   manifest: object,
   fn: (base: string, dir: string, server: Server) => Promise<void>,
+  vars?: Record<string, string | number>,
 ): Promise<void> {
   const dir = mkdtempSync(join(tmpdir(), "svgforge-preview-"));
   const manifestPath = join(dir, "svgforge.json");
   writeFileSync(manifestPath, JSON.stringify(manifest));
-  const server = createPreviewServer(manifestPath);
+  const server = createPreviewServer(manifestPath, vars ? { vars } : undefined);
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   const address = server.address() as AddressInfo;
   try {
@@ -653,6 +654,21 @@ describe("preview server", () => {
         expect(broken.status).toBe(500);
         expect(await broken.text()).toContain("Manifest error");
       },
+    );
+  });
+
+  it("applies --set var overrides", async () => {
+    await withPreview(
+      {
+        vars: { user: "default" },
+        cards: [{ type: "banner", title: "{{user}}", out: "banner.svg" }],
+      },
+      async (base) => {
+        const svg = await (await fetch(`${base}/file?name=banner.svg`)).text();
+        expect(svg).toContain("override");
+        expect(svg).not.toContain(">default<");
+      },
+      { user: "override" },
     );
   });
 
@@ -887,6 +903,9 @@ describe("cli coverage", () => {
         ["preview with out-of-range port", ["preview", "--port", "70000"]],
         ["preview with unknown flag", ["preview", "--watch"]],
         ["preview with two paths", ["preview", "a.json", "b.json"]],
+        ["preview with bad --set", ["preview", "--set", "novalue"]],
+        ["preview with empty --set key", ["preview", "--set", "=x"]],
+        ["preview with missing --set value", ["preview", "--set"]],
       ];
       for (const [label, args] of invalid) {
         expect(run(args), label).toBe(1);

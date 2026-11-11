@@ -56,7 +56,7 @@ svgforge — generate GitHub README SVGs locally
 Usage:
   svgforge <card-type> [flags] [-o file.svg]
   svgforge init [dir] [--force]
-  svgforge preview [manifest] [--port 4321]
+  svgforge preview [manifest] [--port 4321] [--set key=value]
   svgforge render manifest.json -o ./assets [--set key=value]
   svgforge demo [-o ./svgforge-demo]
   svgforge themes | types
@@ -66,7 +66,8 @@ Scaffold:
   svgforge init [dir] [--force]    write svgforge.json + assets/README.md
 
 Preview:
-  svgforge preview [manifest] [--port 4321]   local gallery on 127.0.0.1
+  svgforge preview [manifest] [--port 4321] [--set key=value]
+      local gallery on 127.0.0.1; --set overrides manifest vars
 
 Card types (see below for their flags):
   banner stats skills terminal badge
@@ -382,9 +383,9 @@ export function run(argv: string[]): number {
       let manifestArg: string | undefined;
       for (let i = 0; i < args.length; i += 1) {
         const arg = args[i];
-        if (arg === "--port") {
+        if (arg === "--port" || arg === "--set") {
           i += 1;
-          if (!args[i]) throw new Error("preview --port requires a number");
+          if (!args[i]) throw new Error(`preview ${arg} requires a value`);
           continue;
         }
         if (arg.startsWith("-")) throw new Error(`unknown preview flag: ${arg}`);
@@ -394,8 +395,14 @@ export function run(argv: string[]): number {
       const portValue = take(args, "--port");
       const port = portValue !== undefined ? parsePositiveInt(portValue, "--port") : 4321;
       if (port > 65535) throw new Error("--port must be between 1 and 65535");
+      const vars: Record<string, string | number> = {};
+      for (const pair of takeAll(args, "--set")) {
+        const idx = pair.indexOf("=");
+        if (idx <= 0) throw new Error(`--set expects key=value, got: ${pair}`);
+        vars[pair.slice(0, idx)] = pair.slice(idx + 1);
+      }
       const manifestPath = manifestArg ?? "svgforge.json";
-      const server = createPreviewServer(manifestPath);
+      const server = createPreviewServer(manifestPath, { vars });
       server.on("error", (error) => {
         console.error(`preview: ${error.message}`);
         process.exitCode = 1;
