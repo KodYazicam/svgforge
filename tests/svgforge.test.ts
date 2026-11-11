@@ -118,6 +118,9 @@ describe("cards", () => {
     const contribSvg = contributions({ title: "Contributions", weeks, total: 1337 });
     expect(contribSvg).toContain("1337");
     expect(contribSvg).toContain("rect");
+    expect(contribSvg).toMatch(/<g fill="#[0-9a-f]{6}">/);
+    expect((contribSvg.match(/<rect /g) ?? []).length).toBe(52 * 7 + 1 + 5);
+    expect(Buffer.byteLength(contribSvg, "utf8")).toBeLessThan(22000);
     expect(contributions({ title: "Contributions", seed: 42, total: 1337 })).toBe(contribSvg);
     const colors = levelColors("#0f0c29", "#a78bfa");
     expect(colors).toHaveLength(5);

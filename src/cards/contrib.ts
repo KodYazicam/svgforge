@@ -77,15 +77,19 @@ export function contributions(options: ContributionsOptions): string {
   const gridWidth = weeks.length * (CELL + GAP) - GAP;
   const width = left + gridWidth + 170;
   const height = top + DAYS * (CELL + GAP) - GAP + 46;
-  const rects: string[] = [];
+  const cellsByLevel: string[][] = colors.map(() => []);
   for (let w = 0; w < weeks.length; w += 1) {
     for (let d = 0; d < DAYS; d += 1) {
       const level = weeks[w][d];
       const x = left + w * (CELL + GAP);
       const y = top + d * (CELL + GAP);
-      rects.push(`<rect x="${x}" y="${y}" width="${CELL}" height="${CELL}" rx="3" fill="${colors[level]}"/>`);
+      cellsByLevel[level].push(`<rect x="${x}" y="${y}" width="${CELL}" height="${CELL}" rx="3"/>`);
     }
   }
+  const grid = cellsByLevel
+    .map((cells, level) => (cells.length ? `<g fill="${colors[level]}">${cells.join("")}</g>` : ""))
+    .filter(Boolean)
+    .join("\n  ");
   const totalText =
     options.total !== undefined && Number.isFinite(options.total)
       ? `${options.total} contributions`
@@ -103,7 +107,7 @@ export function contributions(options: ContributionsOptions): string {
   <rect width="${width}" height="${height}" rx="16" fill="${theme.bg}" stroke="${theme.line}"/>
   <text x="28" y="34" fill="${theme.text}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700">${escapeXml(options.title ?? "Contributions")}</text>
   <text x="${width - 28}" y="34" text-anchor="end" fill="${theme.muted}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12">${escapeXml(totalText)}</text>
-  ${rects.join("\n  ")}
+  ${grid}
   <text x="${legendX}" y="${legendY + CELL - 3}" fill="${theme.muted}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">Less</text>
   ${legend}
   <text x="${swatchStart + colors.length * (CELL + GAP + 6) + 6}" y="${legendY + CELL - 3}" fill="${theme.muted}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">More</text>
