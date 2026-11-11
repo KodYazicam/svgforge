@@ -36,6 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Expanded CLI tests to cover all 32 card commands, common style/output flags,
   `contributions --file`, and required-flag/enum validation. `src/cli.ts` line
   coverage is now 96%.
+- Contributions heatmap cells are grouped by level color, shrinking the default
+  example from ~26 KB to ~20 KB with identical layout.
 - Added a documentation coverage test that verifies every card type has a section, a demo entry, and a rendered example.
 
 ### Security

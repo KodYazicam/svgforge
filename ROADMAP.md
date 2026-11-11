@@ -8,6 +8,7 @@ Small, shippable steps. Upvote or comment on an issue if you want something move
 - [x] Manifest rendering with path confinement
 - [x] A rendered example for every card type in `ALL-SVG-FORMS.md`
 - [x] Stable JSON schema for manifests
+- [x] Smaller generated SVGs (contributions heatmap grouped by level)
 
 ## Next
 
