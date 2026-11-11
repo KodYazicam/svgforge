@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import type { Server } from "node:http";
 import type { AddressInfo } from "node:net";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { banner } from "../src/cards/banner.js";
 import { stats } from "../src/cards/stats.js";
 import { skills } from "../src/cards/skills.js";
@@ -674,5 +674,226 @@ describe("preview server", () => {
         expect(post.headers.get("allow")).toBe("GET, HEAD");
       },
     );
+  });
+});
+
+describe("cli coverage", () => {
+  const cardCases: Array<[string, string[]]> = [
+    ["banner", ["--title", "Coverage"]],
+    ["stats", ["--item", "Stars=12"]],
+    ["skills", ["--item", "TypeScript=90"]],
+    ["terminal", ["--line", "$ echo hi"]],
+    ["badge", ["--label", "license", "--value", "Apache-2.0"]],
+    ["divider", ["--label", "sections"]],
+    ["progress", ["--value", "50"]],
+    ["donut", ["--item", "Code=55"]],
+    ["chart", ["--item", "Mon=12"]],
+    ["links", ["--item", "GitHub=https://github.com"]],
+    ["quote", ["--text", "ship files"]],
+    ["code", ["--line", "const x = 1;"]],
+    ["project", ["--name", "svgforge"]],
+    ["wave", ["--title", "Coverage"]],
+    ["timeline", ["--item", "2026-01-01=v1"]],
+    ["contributions", ["--seed", "42"]],
+    ["counter", ["--value", "1337"]],
+    ["sparkline", ["--values", "1,2,3"]],
+    ["gauge", ["--value", "64"]],
+    ["radar", ["--item", "A=1", "--item", "B=2", "--item", "C=3"]],
+    ["columns", ["--item", "A=1"]],
+    ["rating", ["--value", "4.5"]],
+    ["figure", ["--url", "https://example.com/a.svg"]],
+    ["mark", ["--letter", "K"]],
+    ["profile", ["--name", "Ada"]],
+    ["steps", ["--item", "one"]],
+    ["pills", ["--tag", "ts"]],
+    ["callout", ["--text", "note"]],
+    ["compare", ["--item", "x|1|2"]],
+    ["social", ["--item", "GitHub=@a"]],
+    ["checklist", ["--item", "done:tests"]],
+    ["cover", ["--title", "svgforge"]],
+  ];
+
+  it("runs every card command and writes one valid svg", () => {
+    const dir = mkdtempSync(join(tmpdir(), "svgforge-cli-"));
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      expect(cardCases.map(([type]) => type).sort()).toEqual([...CARD_TYPES].sort());
+      for (const [type, args] of cardCases) {
+        const out = join(dir, `${type}.svg`);
+        expect(run([type, ...args, "-o", out]), type).toBe(0);
+        const svg = readFileSync(out, "utf8");
+        expect(svg.startsWith("<?xml"), type).toBe(true);
+        expect(svg.match(/<svg /g)?.length, type).toBe(1);
+        expect(svg.includes("</svg>"), type).toBe(true);
+        expect(svg.includes("undefined"), type).toBe(false);
+        expect(svg.includes("NaN"), type).toBe(false);
+      }
+    } finally {
+      log.mockRestore();
+      error.mockRestore();
+    }
+  });
+
+  it("applies common flags, stdout output, and the --out alias", () => {
+    const dir = mkdtempSync(join(tmpdir(), "svgforge-cli-"));
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const write = vi.spyOn(process.stdout, "write").mockImplementation((() => true) as typeof process.stdout.write);
+    try {
+      const out = join(dir, "flags.svg");
+      expect(
+        run([
+          "banner",
+          "--title",
+          "Flags",
+          "--tag",
+          "v1",
+          "--logo",
+          "K",
+          "--theme",
+          "paper",
+          "--width",
+          "600",
+          "--height",
+          "220",
+          "--radius",
+          "8",
+          "--bg",
+          "#123456",
+          "--bg2",
+          "#234567",
+          "--fg",
+          "#ffffff",
+          "--muted",
+          "#eeeeee",
+          "--accent",
+          "#abcdef",
+          "--accent2",
+          "#fedcba",
+          "--line-color",
+          "#333333",
+          "--font",
+          "Test Sans",
+          "--shadow",
+          "--opacity",
+          "0.5",
+          "--scale",
+          "0.75",
+          "-o",
+          out,
+        ]),
+      ).toBe(0);
+      const svg = readFileSync(out, "utf8");
+      expect(svg).toContain('width="450"');
+      expect(svg).toContain('height="165"');
+      expect(svg).toContain('opacity="0.5"');
+      expect(svg).toContain("feDropShadow");
+      expect(svg).toContain("#123456");
+      expect(svg).toContain("#234567");
+      expect(svg).toContain("#abcdef");
+      expect(svg).toContain("Test Sans");
+      expect(svg).toContain('rx="8"');
+
+      const statsOut = join(dir, "border.svg");
+      expect(run(["stats", "--item", "A=1", "--border-width", "3", "--out", statsOut])).toBe(0);
+      expect(readFileSync(statsOut, "utf8")).toContain('stroke-width="3"');
+
+      const flatOut = join(dir, "flat.svg");
+      expect(run(["wave", "--title", "Flat", "--flat", "-o", flatOut])).toBe(0);
+      expect(readFileSync(flatOut, "utf8")).not.toContain("linearGradient");
+
+      expect(run(["badge", "--label", "a", "--value", "b"])).toBe(0);
+      const stdout = write.mock.calls.at(-1)?.[0];
+      expect(String(stdout)).toContain("<svg");
+    } finally {
+      log.mockRestore();
+      error.mockRestore();
+      write.mockRestore();
+    }
+  });
+
+  it("covers contributions --file and its validation", () => {
+    const dir = mkdtempSync(join(tmpdir(), "svgforge-cli-"));
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const weeks = join(dir, "weeks.json");
+      writeFileSync(weeks, JSON.stringify({ weeks: [[0, 1, 2, 3, 4, 1, 0]] }));
+      const out = join(dir, "contrib.svg");
+      expect(run(["contributions", "--file", weeks, "--total", "10", "-o", out])).toBe(0);
+      const svg = readFileSync(out, "utf8");
+      expect(svg).toContain("10");
+
+      const bad = join(dir, "bad.json");
+      writeFileSync(bad, "{}");
+      expect(run(["contributions", "--file", bad, "-o", out])).toBe(1);
+    } finally {
+      log.mockRestore();
+      error.mockRestore();
+    }
+  });
+
+  it("rejects invalid invocations with exit code 1", () => {
+    const dir = mkdtempSync(join(tmpdir(), "svgforge-cli-"));
+    const manifest = join(dir, "m.json");
+    writeFileSync(manifest, JSON.stringify({ cards: [{ type: "banner", title: "x", out: "b.svg" }] }));
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const invalid: Array<[string, string[]]> = [
+        ["stats without items", ["stats"]],
+        ["skills without items", ["skills"]],
+        ["terminal without lines", ["terminal"]],
+        ["progress without value", ["progress"]],
+        ["donut without items", ["donut"]],
+        ["chart without items", ["chart"]],
+        ["links without items", ["links"]],
+        ["quote without text", ["quote"]],
+        ["code without lines", ["code"]],
+        ["timeline without items", ["timeline"]],
+        ["contributions without seed", ["contributions"]],
+        ["counter without value", ["counter"]],
+        ["sparkline with one value", ["sparkline", "--values", "1"]],
+        ["gauge without value", ["gauge"]],
+        ["radar with two axes", ["radar", "--item", "A=1", "--item", "B=2"]],
+        ["columns without items", ["columns"]],
+        ["rating without value", ["rating"]],
+        ["figure without url", ["figure"]],
+        ["figure with bad fit", ["figure", "--url", "https://example.com/a.svg", "--fit", "stretch"]],
+        ["mark without letter", ["mark"]],
+        ["mark with bad shape", ["mark", "--letter", "K", "--shape", "star"]],
+        ["profile without name", ["profile"]],
+        ["steps without items", ["steps"]],
+        ["pills without tags", ["pills"]],
+        ["callout without text", ["callout"]],
+        ["callout with bad tone", ["callout", "--text", "x", "--tone", "loud"]],
+        ["compare without items", ["compare"]],
+        ["social without items", ["social"]],
+        ["checklist without items", ["checklist"]],
+        ["cover without title", ["cover"]],
+        ["badge with bad style", ["badge", "--style", "fancy"]],
+        ["banner with bad gradient", ["banner", "--gradient", "#111111"]],
+        ["banner with bad gradient color", ["banner", "--gradient", "#111111,red"]],
+        ["banner with bad color", ["banner", "--bg", "red"]],
+        ["banner with bad width", ["banner", "--width", "abc"]],
+        ["banner with bad border width", ["banner", "--border-width", "-1"]],
+        ["banner with bad opacity", ["banner", "--opacity", "200"]],
+        ["banner with bad scale", ["banner", "--scale", "9"]],
+        ["unknown command", ["nope"]],
+        ["render without manifest", ["render"]],
+        ["render with bad --set", ["render", manifest, "--set", "novalue"]],
+        ["preview with bad port", ["preview", "--port", "abc"]],
+        ["preview with out-of-range port", ["preview", "--port", "70000"]],
+        ["preview with unknown flag", ["preview", "--watch"]],
+        ["preview with two paths", ["preview", "a.json", "b.json"]],
+      ];
+      for (const [label, args] of invalid) {
+        expect(run(args), label).toBe(1);
+      }
+    } finally {
+      log.mockRestore();
+      error.mockRestore();
+    }
   });
 });
