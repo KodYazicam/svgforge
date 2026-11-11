@@ -97,6 +97,8 @@ describe("cards", () => {
     expect(projectSvg).toContain("Stars");
     const waveSvg = wave({ title: "svgforge", subtitle: "v2" });
     expect(waveSvg).toContain("<clipPath");
+    expect((waveSvg.match(/<path /g) ?? []).length).toBe(3);
+    expect(Buffer.byteLength(wave({ title: "x" }), "utf8")).toBeLessThan(6500);
     expect(wave({ title: "x", animate: true })).toContain("<animateTransform");
   });
 
