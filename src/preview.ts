@@ -15,17 +15,25 @@ interface PreviewPayload {
   items: PreviewItem[];
 }
 
+export interface PreviewOptions {
+  vars?: Record<string, string | number>;
+}
+
 const HTML_CSP = "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'";
 const SVG_CSP = "default-src 'none'; img-src https: data:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'";
 
-function loadPreview(manifestPath: string, text: string): PreviewPayload {
+function loadPreview(manifestPath: string, text: string, vars: PreviewOptions["vars"] = {}): PreviewPayload {
   const manifest = JSON.parse(text) as Manifest;
-  const rendered = renderManifest(manifest);
+  const merged: Manifest = {
+    ...manifest,
+    vars: { ...(manifest?.vars ?? {}), ...vars },
+  };
+  const rendered = renderManifest(merged);
   return {
     manifestPath,
     items: rendered.map((item, index) => ({
       file: item.file,
-      type: manifest.cards[index]?.type ?? "card",
+      type: merged.cards[index]?.type ?? "card",
       svg: item.svg,
     })),
   };
@@ -113,7 +121,7 @@ function notFound(res: ServerResponse, head: boolean): void {
   });
 }
 
-export function createPreviewServer(manifestPath: string): Server {
+export function createPreviewServer(manifestPath: string, options: PreviewOptions = {}): Server {
   const absolute = resolve(manifestPath);
   let cachedText: string | undefined;
   let cachedPayload: PreviewPayload | undefined;
@@ -121,7 +129,7 @@ export function createPreviewServer(manifestPath: string): Server {
   const load = (): PreviewPayload => {
     const text = readFileSync(absolute, "utf8");
     if (cachedText === text && cachedPayload) return cachedPayload;
-    const payload = loadPreview(absolute, text);
+    const payload = loadPreview(absolute, text, options.vars);
     cachedText = text;
     cachedPayload = payload;
     return payload;

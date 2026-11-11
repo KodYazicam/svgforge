@@ -186,14 +186,15 @@ Then edit the manifest, rerun `render`, and commit `assets/*.svg`. `init` refuse
 
 ## Preview locally
 
-`svgforge preview [manifest] [--port 4321]` serves a gallery of every card on `http://127.0.0.1:4321`:
+`svgforge preview [manifest] [--port 4321] [--set key=value]` serves a gallery of every card on `http://127.0.0.1:4321`:
 
 ```bash
 svgforge preview svgforge.json
 svgforge preview examples/demo.json --port 4400
+svgforge preview profile.json --set user=KodYazicam
 ```
 
-The server re-reads the manifest on every request, so edit the JSON and refresh the browser. It binds loopback only and serves only the `out` files declared by the manifest; it does not browse the filesystem. Ctrl+C stops it. Invalid manifests show the renderer error instead of a blank page.
+The server re-reads the manifest on every request, so edit the JSON and refresh the browser. `--set` overrides manifest vars exactly like [`render`](#manifest). It binds loopback only and serves only the `out` files declared by the manifest; it does not browse the filesystem. Ctrl+C stops it. Invalid manifests show the renderer error instead of a blank page.
 
 ## Card types
 
@@ -275,7 +276,7 @@ Bad colors (`red`) and bad sizes (`--width abc`) exit 1 with the flag named in t
 ```text
 svgforge <card-type> [flags] [-o file.svg]
 svgforge init [dir] [--force]
-svgforge preview [manifest] [--port 4321]
+svgforge preview [manifest] [--port 4321] [--set key=value]
 svgforge render manifest.json -o ./outdir [--set key=value]
 svgforge demo [-o ./svgforge-demo]
 svgforge themes | types
