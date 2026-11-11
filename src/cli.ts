@@ -46,6 +46,7 @@ import {
   type StyleOverrides,
 } from "./escape.js";
 import { invokedDirectly } from "./main.js";
+import { createPreviewServer } from "./preview.js";
 import { packageVersion } from "./version.js";
 
 function help(): string {
@@ -55,6 +56,7 @@ svgforge — generate GitHub README SVGs locally
 Usage:
   svgforge <card-type> [flags] [-o file.svg]
   svgforge init [dir] [--force]
+  svgforge preview [manifest] [--port 4321]
   svgforge render manifest.json -o ./assets [--set key=value]
   svgforge demo [-o ./svgforge-demo]
   svgforge themes | types
@@ -62,6 +64,9 @@ Usage:
 
 Scaffold:
   svgforge init [dir] [--force]    write svgforge.json + assets/README.md
+
+Preview:
+  svgforge preview [manifest] [--port 4321]   local gallery on 127.0.0.1
 
 Card types (see below for their flags):
   banner stats skills terminal badge
@@ -372,6 +377,37 @@ export function run(argv: string[]): number {
   }
 
   try {
+    if (cmd === "preview") {
+      const args = argv.slice(1);
+      let manifestArg: string | undefined;
+      for (let i = 0; i < args.length; i += 1) {
+        const arg = args[i];
+        if (arg === "--port") {
+          i += 1;
+          if (!args[i]) throw new Error("preview --port requires a number");
+          continue;
+        }
+        if (arg.startsWith("-")) throw new Error(`unknown preview flag: ${arg}`);
+        if (manifestArg !== undefined) throw new Error("preview accepts at most one manifest path");
+        manifestArg = arg;
+      }
+      const portValue = take(args, "--port");
+      const port = portValue !== undefined ? parsePositiveInt(portValue, "--port") : 4321;
+      if (port > 65535) throw new Error("--port must be between 1 and 65535");
+      const manifestPath = manifestArg ?? "svgforge.json";
+      const server = createPreviewServer(manifestPath);
+      server.on("error", (error) => {
+        console.error(`preview: ${error.message}`);
+        process.exitCode = 1;
+      });
+      server.listen(port, "127.0.0.1", () => {
+        const address = server.address();
+        const actual = typeof address === "object" && address ? address.port : port;
+        console.log(`svgforge preview: http://127.0.0.1:${actual}`);
+        console.log(`manifest: ${resolve(manifestPath)} (refresh after edits)`);
+      });
+      return 0;
+    }
     if (cmd === "init") {
       const args = argv.slice(1);
       const unknown = args.filter((arg) => arg.startsWith("-") && !["--force", "-f"].includes(arg));

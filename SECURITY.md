@@ -8,6 +8,10 @@ svgforge generates SVG files on disk. It does not fetch GitHub stats and does no
 
 User strings (titles, labels, terminal lines) are XML-escaped (`& < > " '`).
 
+## Preview server
+
+`svgforge preview` binds `127.0.0.1` only. It serves an HTML gallery plus an exact allowlist of the SVG outputs declared by the manifest; every other path and file name returns 404. It does not serve directories or arbitrary filesystem paths. The manifest is re-read per request, invalid manifests return 500, HTML is escaped, and responses set `nosniff`, `no-store`, `Referrer-Policy: no-referrer`, and a restrictive CSP.
+
 ## Reporting
 
 Open a private advisory on [KodYazicam/svgforge](https://github.com/KodYazicam/svgforge/security/advisories/new).

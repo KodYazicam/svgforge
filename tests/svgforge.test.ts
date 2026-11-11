@@ -2,6 +2,8 @@ import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, symlin
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
+import type { Server } from "node:http";
+import type { AddressInfo } from "node:net";
 import { describe, expect, it } from "vitest";
 import { banner } from "../src/cards/banner.js";
 import { stats } from "../src/cards/stats.js";
@@ -31,6 +33,7 @@ import { rating } from "../src/cards/rating.js";
 import { escapeXml, THEMES, resolveTheme, applyOverrides, isValidColor, mixHex, seededRandom, scaleSvg, wrapLines, shadowFilter, shadowAttr, approxTextWidth, contrastRatio, relativeLuminance } from "../src/escape.js";
 import { run } from "../src/cli.js";
 import { invokedDirectly } from "../src/main.js";
+import { createPreviewServer } from "../src/preview.js";
 
 describe("cards", () => {
   it("escapes XML in titles", () => {
@@ -574,5 +577,102 @@ describe("init", () => {
     const dir = mkdtempSync(join(tmpdir(), "svgforge-init-"));
     expect(run(["init", dir, "--nope"])).toBe(1);
     expect(existsSync(join(dir, "svgforge.json"))).toBe(false);
+  });
+});
+
+async function withPreview(
+  manifest: object,
+  fn: (base: string, dir: string, server: Server) => Promise<void>,
+): Promise<void> {
+  const dir = mkdtempSync(join(tmpdir(), "svgforge-preview-"));
+  const manifestPath = join(dir, "svgforge.json");
+  writeFileSync(manifestPath, JSON.stringify(manifest));
+  const server = createPreviewServer(manifestPath);
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address() as AddressInfo;
+  try {
+    await fn(`http://127.0.0.1:${address.port}`, dir, server);
+  } finally {
+    await new Promise<void>((resolve) => {
+      server.close(() => resolve());
+      server.closeAllConnections();
+    });
+  }
+}
+
+describe("preview server", () => {
+  it("serves a gallery and rendered svg files", async () => {
+    await withPreview(
+      {
+        theme: "midnight",
+        cards: [
+          { type: "banner", title: "Preview", out: "banner.svg" },
+          { type: "badge", label: "a", value: "b", out: "nested/badge.svg" },
+        ],
+      },
+      async (base) => {
+        const page = await fetch(`${base}/`);
+        expect(page.status).toBe(200);
+        expect(page.headers.get("content-type")).toContain("text/html");
+        expect(page.headers.get("x-content-type-options")).toBe("nosniff");
+        expect(page.headers.get("content-security-policy")).toContain("default-src 'none'");
+        const html = await page.text();
+        expect(html).toContain("banner.svg");
+        expect(html).toContain("nested/badge.svg");
+        expect(html).toContain("<span>banner</span>");
+        expect(html).toContain("/file?name=nested%2Fbadge.svg");
+
+        const svg = await fetch(`${base}/file?name=${encodeURIComponent("nested/badge.svg")}`);
+        expect(svg.status).toBe(200);
+        expect(svg.headers.get("content-type")).toContain("image/svg+xml");
+        expect(await svg.text()).toContain("<svg");
+
+        const head = await fetch(`${base}/file?name=banner.svg`, { method: "HEAD" });
+        expect(head.status).toBe(200);
+        expect(await head.text()).toBe("");
+      },
+    );
+  });
+
+  it("picks up manifest edits and reports invalid manifests", async () => {
+    await withPreview(
+      { cards: [{ type: "banner", title: "Edit me", out: "banner.svg" }] },
+      async (base, dir) => {
+        const first = await (await fetch(`${base}/file?name=banner.svg`)).text();
+        expect(first).toContain("Edit me");
+
+        writeFileSync(
+          join(dir, "svgforge.json"),
+          JSON.stringify({ cards: [{ type: "banner", title: "Changed", out: "banner.svg" }] }),
+        );
+        const second = await (await fetch(`${base}/file?name=banner.svg`)).text();
+        expect(second).toContain("Changed");
+
+        writeFileSync(join(dir, "svgforge.json"), "{ nope");
+        const broken = await fetch(`${base}/`);
+        expect(broken.status).toBe(500);
+        expect(await broken.text()).toContain("Manifest error");
+      },
+    );
+  });
+
+  it("only serves declared outputs and escapes names", async () => {
+    await withPreview(
+      { cards: [{ type: "badge", label: "a", value: "b", out: 'quote"<.svg' }] },
+      async (base) => {
+        const html = await (await fetch(`${base}/`)).text();
+        expect(html).toContain("quote&quot;&lt;.svg");
+        expect(html).not.toContain('quote"<.svg');
+
+        expect((await fetch(`${base}/file?name=${encodeURIComponent("../evil.svg")}`)).status).toBe(404);
+        expect((await fetch(`${base}/file?name=${encodeURIComponent("/etc/passwd")}`)).status).toBe(404);
+        expect((await fetch(`${base}/file?name=nope.svg`)).status).toBe(404);
+        expect((await fetch(`${base}/nope`)).status).toBe(404);
+
+        const post = await fetch(`${base}/`, { method: "POST" });
+        expect(post.status).toBe(405);
+        expect(post.headers.get("allow")).toBe("GET, HEAD");
+      },
+    );
   });
 });
