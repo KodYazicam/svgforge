@@ -47,6 +47,7 @@ import {
 } from "./escape.js";
 import { invokedDirectly } from "./main.js";
 import { createPreviewServer } from "./preview.js";
+import { validateManifest } from "./validate.js";
 import { packageVersion } from "./version.js";
 
 function help(): string {
@@ -58,6 +59,7 @@ Usage:
   svgforge init [dir] [--force]
   svgforge preview [manifest] [--port 4321] [--set key=value]
   svgforge render manifest.json -o ./assets [--set key=value]
+  svgforge validate manifest.json
   svgforge demo [-o ./svgforge-demo]
   svgforge themes | types
   svgforge --help | --version
@@ -68,6 +70,10 @@ Scaffold:
 Preview:
   svgforge preview [manifest] [--port 4321] [--set key=value]
       local gallery on 127.0.0.1; --set overrides manifest vars
+
+Validate:
+  svgforge validate manifest.json  schema, paths, duplicate outputs, types, themes
+      reports the card count and output files; never writes files
 
 Card types (see below for their flags):
   banner stats skills terminal badge
@@ -422,6 +428,25 @@ export function run(argv: string[]): number {
       const positional = args.filter((arg) => !arg.startsWith("-"));
       if (positional.length > 1) throw new Error("init accepts at most one directory");
       return initScaffold(positional[0] ?? ".", has(args, "--force") || has(args, "-f"));
+    }
+    if (cmd === "validate") {
+      const args = argv.slice(1);
+      const flags = args.filter((arg) => arg.startsWith("-"));
+      if (flags.length > 0) throw new Error(`unknown validate flag: ${flags[0]}`);
+      if (args.length !== 1) throw new Error("validate needs exactly one manifest path");
+      const file = resolve(args[0]);
+      let manifest: Manifest;
+      try {
+        manifest = JSON.parse(readFileSync(file, "utf8")) as Manifest;
+      } catch (error) {
+        if (error instanceof SyntaxError) throw new Error(`invalid JSON in ${args[0]}: ${error.message}`);
+        throw error;
+      }
+      const summary = validateManifest(manifest);
+      console.log(`valid manifest: ${summary.cards} card${summary.cards === 1 ? "" : "s"}`);
+      console.log(`types: ${summary.types.join(", ") || "none"}`);
+      console.log(`outputs: ${summary.outputs.join(", ") || "none"}`);
+      return 0;
     }
     const common = parseCommon(argv);
     if (cmd === "banner") {

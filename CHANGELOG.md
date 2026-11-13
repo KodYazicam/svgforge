@@ -24,6 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   declared outputs, and reports manifest errors in the page.
 - `svgforge preview` now accepts repeatable `--set key=value` overrides,
   matching `render`.
+- `svgforge validate manifest.json` checks a manifest without writing files:
+  the published JSON schema, path confinement and duplicate `out` checks
+  (shared with `renderManifest`), unknown card types, and unknown themes.
+  Success prints the card count, types, and output paths; any problem exits 1
+  with a specific message.
 
 ### Changed
 

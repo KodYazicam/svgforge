@@ -278,12 +278,13 @@ svgforge <card-type> [flags] [-o file.svg]
 svgforge init [dir] [--force]
 svgforge preview [manifest] [--port 4321] [--set key=value]
 svgforge render manifest.json -o ./outdir [--set key=value]
+svgforge validate manifest.json
 svgforge demo [-o ./svgforge-demo]
 svgforge themes | types
 svgforge --help | --version
 ```
 
-`init` scaffolds a project (see [Scaffold a project](#scaffold-a-project)); `--force` replaces `svgforge.json` and `assets/README.md`. `preview` serves a loopback gallery (see [Preview locally](#preview-locally)).
+`init` scaffolds a project (see [Scaffold a project](#scaffold-a-project)); `--force` replaces `svgforge.json` and `assets/README.md`. `preview` serves a loopback gallery (see [Preview locally](#preview-locally)). `validate` checks a manifest without rendering or writing anything (see [Manifest](#manifest)).
 
 `demo` writes one sample of each of the 32 card types — the fastest way to see everything a theme can do. `render` writes one file per card. Nested `out` paths are created (`assets/hero/banner.svg`) **inside** `-o`.
 
@@ -322,6 +323,17 @@ The manifest shape is published as JSON Schema 2020-12 at [`schema/svgforge.sche
 ```bash
 svgforge render profile.json -o ./assets --set tool=myapp
 ```
+
+Check a manifest before rendering or in CI. `validate` writes nothing and exits 1 on the first problem:
+
+```bash
+svgforge validate svgforge.json
+# valid manifest: 2 cards
+# types: banner, stats
+# outputs: banner.svg, stats.svg
+```
+
+It runs the published JSON schema (unknown keys, wrong types, invalid colors, unsafe `out`), the same path and duplicate-output checks as `render`, plus unknown card types and themes.
 
 Per-card `theme` overrides the manifest default. If `out` is omitted, files are `banner-1.svg`, `stats-2.svg`, …
 
