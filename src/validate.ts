@@ -1,25 +1,8 @@
-import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { THEMES } from "./escape.js";
 import { ManifestError, prepareManifest, type Manifest, type PreparedCard } from "./render.js";
-
-interface JsonSchema {
-  $ref?: string;
-  type?: string | string[];
-  enum?: unknown[];
-  required?: string[];
-  properties?: Record<string, JsonSchema>;
-  additionalProperties?: boolean | JsonSchema;
-  items?: JsonSchema;
-  pattern?: string;
-  minLength?: number;
-  minimum?: number;
-  maximum?: number;
-  exclusiveMinimum?: number;
-  description?: string;
-  $defs?: Record<string, JsonSchema>;
-}
+import { loadSchema, type JsonSchema } from "./schema.js";
 
 export interface ValidationIssue {
   path: string;
@@ -42,11 +25,8 @@ export interface ValidationSummary {
 
 const SCHEMA_PATH = join(dirname(fileURLToPath(import.meta.url)), "..", "schema", "svgforge.schema.json");
 
-let cachedSchema: JsonSchema | undefined;
-
 function manifestSchema(): JsonSchema {
-  cachedSchema ??= JSON.parse(readFileSync(SCHEMA_PATH, "utf8")) as JsonSchema;
-  return cachedSchema;
+  return loadSchema(SCHEMA_PATH);
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {

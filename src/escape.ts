@@ -298,6 +298,22 @@ export const THEMES: Record<string, Theme> = {
   },
 };
 
+export const THEME_OVERRIDE_CACHE_LIMIT = 64;
+
+const overrideThemes = new Map<string, Theme>();
+
+// Theme records are immutable: cards only read them, and overrides copy first.
+// THEMES itself is the per-process registry cache keyed by theme name.
+for (const theme of Object.values(THEMES)) Object.freeze(theme);
+
+export function clearThemeCache(): void {
+  overrideThemes.clear();
+}
+
+export function themeCacheSize(): number {
+  return overrideThemes.size;
+}
+
 export function resolveTheme(name?: string): Theme {
   return THEMES[name ?? "midnight"] ?? THEMES.midnight;
 }
@@ -377,8 +393,28 @@ export function applyOverrides(theme: Theme, overrides: StyleOverrides = {}): Th
   return merged;
 }
 
+function hasColorOverrides(options: StyleOverrides): boolean {
+  for (const key of COLOR_KEYS) {
+    if (options[key] !== undefined) return true;
+  }
+  return false;
+}
+
 export function cardTheme(options: { theme?: string } & StyleOverrides): Theme {
-  return applyOverrides(resolveTheme(options.theme), options);
+  const base = resolveTheme(options.theme);
+  if (!hasColorOverrides(options)) return base;
+
+  const cacheKey = JSON.stringify([base.name, ...COLOR_KEYS.map((key) => options[key] ?? null)]);
+  const cached = overrideThemes.get(cacheKey);
+  if (cached) return cached;
+
+  const theme = Object.freeze(applyOverrides(base, options));
+  overrideThemes.set(cacheKey, theme);
+  if (overrideThemes.size > THEME_OVERRIDE_CACHE_LIMIT) {
+    const oldest = overrideThemes.keys().next().value;
+    if (oldest !== undefined) overrideThemes.delete(oldest);
+  }
+  return theme;
 }
 
 export function parsePositiveInt(value: string, flag: string): number {
