@@ -24,6 +24,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   declared outputs, and reports manifest errors in the page.
 - `svgforge preview` now accepts repeatable `--set key=value` overrides,
   matching `render`.
+- `svgforge preview` live reload: the gallery subscribes to a loopback-only
+  `/events` SSE endpoint, and a debounced `fs.watch` on the manifest directory
+  reloads open tabs on save. Event streams and the watcher close with the
+  server; no runtime dependencies were added.
 - `svgforge validate manifest.json` checks a manifest without writing files:
   the published JSON schema, path confinement and duplicate `out` checks
   (shared with `renderManifest`), unknown card types, and unknown themes.

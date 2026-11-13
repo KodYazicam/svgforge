@@ -33,7 +33,7 @@ import { rating } from "../src/cards/rating.js";
 import { escapeXml, THEMES, resolveTheme, applyOverrides, isValidColor, mixHex, seededRandom, scaleSvg, wrapLines, shadowFilter, shadowAttr, approxTextWidth, contrastRatio, relativeLuminance } from "../src/escape.js";
 import { run } from "../src/cli.js";
 import { invokedDirectly } from "../src/main.js";
-import { createPreviewServer } from "../src/preview.js";
+import { createPreviewServer, isLoopbackAddress } from "../src/preview.js";
 
 describe("cards", () => {
   it("escapes XML in titles", () => {
@@ -851,6 +851,51 @@ async function withPreview(
   }
 }
 
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  let timer: NodeJS.Timeout | undefined;
+  const timeout = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(() => reject(new Error(`timed out waiting for ${label}`)), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timer) clearTimeout(timer);
+  });
+}
+
+async function readSseUntil(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  needle: string,
+  timeoutMs = 3000,
+): Promise<string> {
+  const decoder = new TextDecoder();
+  const deadline = Date.now() + timeoutMs;
+  let text = "";
+  while (!text.includes(needle)) {
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) throw new Error(`timed out waiting for ${needle}; received: ${text}`);
+    const chunk = await withTimeout(reader.read(), remaining, needle);
+    if (chunk.done) break;
+    text += decoder.decode(chunk.value, { stream: true });
+  }
+  return text;
+}
+
+async function collectSse(reader: ReadableStreamDefaultReader<Uint8Array>, windowMs: number): Promise<string> {
+  const decoder = new TextDecoder();
+  const deadline = Date.now() + windowMs;
+  let text = "";
+  while (true) {
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) return text;
+    try {
+      const chunk = await withTimeout(reader.read(), remaining, "more SSE data");
+      if (chunk.done) return text;
+      text += decoder.decode(chunk.value, { stream: true });
+    } catch {
+      return text;
+    }
+  }
+}
+
 describe("preview server", () => {
   it("serves a gallery and rendered svg files", async () => {
     await withPreview(
@@ -866,7 +911,10 @@ describe("preview server", () => {
         expect(page.status).toBe(200);
         expect(page.headers.get("content-type")).toContain("text/html");
         expect(page.headers.get("x-content-type-options")).toBe("nosniff");
-        expect(page.headers.get("content-security-policy")).toContain("default-src 'none'");
+        const csp = page.headers.get("content-security-policy") ?? "";
+        expect(csp).toContain("default-src 'none'");
+        expect(csp).toContain("script-src 'unsafe-inline'");
+        expect(csp).toContain("connect-src 'self'");
         const html = await page.text();
         expect(html).toContain("banner.svg");
         expect(html).toContain("nested/badge.svg");
@@ -940,6 +988,104 @@ describe("preview server", () => {
         expect(post.headers.get("allow")).toBe("GET, HEAD");
       },
     );
+  });
+
+  it("serves SSE only to loopback addresses", () => {
+    expect(isLoopbackAddress("127.0.0.1")).toBe(true);
+    expect(isLoopbackAddress("127.0.0.2")).toBe(true);
+    expect(isLoopbackAddress("::1")).toBe(true);
+    expect(isLoopbackAddress("::ffff:127.0.0.1")).toBe(true);
+    expect(isLoopbackAddress("::ffff:127.0.0.2")).toBe(true);
+    expect(isLoopbackAddress("192.168.1.20")).toBe(false);
+    expect(isLoopbackAddress("10.0.0.1")).toBe(false);
+    expect(isLoopbackAddress(undefined)).toBe(false);
+  });
+
+  it("streams a reload event over SSE when the manifest changes", async () => {
+    await withPreview(
+      { cards: [{ type: "banner", title: "Live", out: "banner.svg" }] },
+      async (base, dir) => {
+        const html = await (await fetch(`${base}/`)).text();
+        expect(html).toContain('new EventSource("/events")');
+        expect(html).toContain('addEventListener("reload"');
+
+        const controller = new AbortController();
+        const response = await fetch(`${base}/events`, { signal: controller.signal });
+        expect(response.status).toBe(200);
+        expect(response.headers.get("content-type")).toContain("text/event-stream");
+        expect(response.headers.get("cache-control")).toBe("no-store");
+        expect(response.headers.get("x-content-type-options")).toBe("nosniff");
+        const reader = response.body!.getReader();
+        try {
+          writeFileSync(
+            join(dir, "svgforge.json"),
+            JSON.stringify({ cards: [{ type: "banner", title: "Changed", out: "banner.svg" }] }),
+          );
+          const events = await readSseUntil(reader, "event: reload");
+          expect(events).toContain("data:");
+          expect(await (await fetch(`${base}/file?name=banner.svg`)).text()).toContain("Changed");
+        } finally {
+          controller.abort();
+          await reader.cancel().catch(() => {});
+        }
+      },
+    );
+  });
+
+  it("debounces rapid manifest writes into one reload event", async () => {
+    await withPreview(
+      { cards: [{ type: "banner", title: "Start", out: "banner.svg" }] },
+      async (base, dir) => {
+        const controller = new AbortController();
+        const response = await fetch(`${base}/events`, { signal: controller.signal });
+        const reader = response.body!.getReader();
+        try {
+          for (const title of ["one", "two", "three"]) {
+            writeFileSync(
+              join(dir, "svgforge.json"),
+              JSON.stringify({ cards: [{ type: "banner", title, out: "banner.svg" }] }),
+            );
+            await new Promise((resolve) => setTimeout(resolve, 30));
+          }
+          const first = await readSseUntil(reader, "event: reload");
+          const extra = await collectSse(reader, 400);
+          expect((first + extra).match(/event: reload/g)?.length ?? 0).toBe(1);
+        } finally {
+          controller.abort();
+          await reader.cancel().catch(() => {});
+        }
+      },
+    );
+  });
+
+  it("closes SSE clients and stops watching when the server closes", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "svgforge-preview-"));
+    const manifestPath = join(dir, "svgforge.json");
+    writeFileSync(manifestPath, JSON.stringify({ cards: [{ type: "banner", title: "Close", out: "banner.svg" }] }));
+    const server = createPreviewServer(manifestPath);
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+    const address = server.address() as AddressInfo;
+    const controller = new AbortController();
+    try {
+      const response = await fetch(`http://127.0.0.1:${address.port}/events`, { signal: controller.signal });
+      const reader = response.body!.getReader();
+      await readSseUntil(reader, "retry:");
+
+      await withTimeout(
+        new Promise<void>((resolve) => {
+          server.close(() => resolve());
+        }),
+        2000,
+        "server close",
+      );
+      expect(server.listening).toBe(false);
+      const end = await withTimeout(reader.read(), 2000, "SSE stream end");
+      expect(end.done).toBe(true);
+      expect(() => writeFileSync(manifestPath, JSON.stringify({ cards: [] }))).not.toThrow();
+    } finally {
+      controller.abort();
+      server.closeAllConnections();
+    }
   });
 });
 

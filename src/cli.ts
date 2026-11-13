@@ -424,7 +424,7 @@ export function run(argv: string[], options: RunOptions = {}): number {
         const address = server.address();
         const actual = typeof address === "object" && address ? address.port : port;
         console.log(`svgforge preview: http://127.0.0.1:${actual}`);
-        console.log(`manifest: ${resolve(manifestPath)} (refresh after edits)`);
+        console.log(`manifest: ${resolve(manifestPath)} (live reload on save)`);
       });
       return 0;
     }

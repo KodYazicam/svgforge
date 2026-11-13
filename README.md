@@ -194,7 +194,7 @@ svgforge preview examples/demo.json --port 4400
 svgforge preview profile.json --set user=KodYazicam
 ```
 
-The server re-reads the manifest on every request, so edit the JSON and refresh the browser. `--set` overrides manifest vars exactly like [`render`](#manifest). It binds loopback only and serves only the `out` files declared by the manifest; it does not browse the filesystem. Ctrl+C stops it. Invalid manifests show the renderer error instead of a blank page.
+The server re-reads the manifest on every request and watches it with `fs.watch` (150 ms debounce), so saving the JSON reloads open browser tabs automatically over Server-Sent Events at `/events`. `--set` overrides manifest vars exactly like [`render`](#manifest). It binds loopback only, serves only the `out` files declared by the manifest, and returns 403 on `/events` for non-loopback peers; it does not browse the filesystem. Ctrl+C stops it and closes event streams. Invalid manifests show the renderer error instead of a blank page.
 
 ## Card types
 
