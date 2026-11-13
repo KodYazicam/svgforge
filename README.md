@@ -325,6 +325,8 @@ svgforge render profile.json -o ./assets --set tool=myapp
 
 Per-card `theme` overrides the manifest default. If `out` is omitted, files are `banner-1.svg`, `stats-2.svg`, …
 
+Two cards may not write the same file: `render` fails with `duplicate output path "name.svg" (cards 1 and 2)` before writing anything. Paths are normalized before comparison, so `a.svg` and `./a.svg` are the same target.
+
 ## Path confinement
 
 `{{var}}` substitution runs first. The path check then runs on the substituted `out` value. Values that contain `..`, that are absolute (`/etc/cron.d/pwn.svg`), or that would resolve outside `-o` are **rejected**. `links` only accepts `http(s)` urls. If you find a bypass, see [SECURITY.md](./SECURITY.md).

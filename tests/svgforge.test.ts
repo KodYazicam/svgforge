@@ -411,6 +411,57 @@ describe("manifest + cli", () => {
     expect(() => safeOutputPath("/tmp/out", "../evil.svg")).toThrow(/traversal/);
   });
 
+  it("rejects duplicate output paths", () => {
+    expect(() =>
+      renderManifest({
+        cards: [
+          { type: "banner", title: "a", out: "same.svg" },
+          { type: "badge", label: "b", value: "c", out: "same.svg" },
+        ],
+      }),
+    ).toThrow(/duplicate output path "same\.svg" \(cards 1 and 2\)/);
+    expect(() =>
+      renderManifest({
+        vars: { page: "same" },
+        cards: [
+          { type: "banner", title: "a", out: "{{page}}.svg" },
+          { type: "badge", label: "b", value: "c", out: "./{{page}}.svg" },
+        ],
+      }),
+    ).toThrow(/duplicate output path/);
+    expect(
+      renderManifest({
+        cards: [
+          { type: "banner", title: "a", out: "a.svg" },
+          { type: "badge", label: "b", value: "c", out: "nested/a.svg" },
+        ],
+      }),
+    ).toHaveLength(2);
+  });
+
+  it("writes no files when render finds a duplicate output path", () => {
+    const dir = mkdtempSync(join(tmpdir(), "svgforge-"));
+    const manifest = join(dir, "m.json");
+    writeFileSync(
+      manifest,
+      JSON.stringify({
+        cards: [
+          { type: "banner", title: "first", out: "same.svg" },
+          { type: "badge", label: "second", value: "x", out: "same.svg" },
+        ],
+      }),
+    );
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      expect(run(["render", manifest, "-o", dir])).toBe(1);
+      expect(existsSync(join(dir, "same.svg"))).toBe(false);
+    } finally {
+      log.mockRestore();
+      error.mockRestore();
+    }
+  });
+
   it("demo writes one svg per card type", () => {
     const dir = mkdtempSync(join(tmpdir(), "svgforge-demo-"));
     expect(run(["demo", "-o", dir])).toBe(0);
