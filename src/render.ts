@@ -216,6 +216,13 @@ export function safeOutputPath(baseDir: string, file: string): string {
 
 const CARD_TYPE_SET = new Set<string>(CARD_TYPES);
 
+export class ManifestError extends Error {
+  constructor(message: string, readonly path: string) {
+    super(message);
+    this.name = "ManifestError";
+  }
+}
+
 export interface PreparedCard {
   resolved: Card;
   file: string;
@@ -228,23 +235,23 @@ export interface PreparedCard {
  */
 export function prepareManifest(manifest: Manifest): PreparedCard[] {
   if (!manifest?.cards || !Array.isArray(manifest.cards)) {
-    throw new Error("manifest must contain a cards array");
+    throw new ManifestError("manifest must contain a cards array", "manifest.cards");
   }
   const prepared = manifest.cards.map((card, index) => {
     if (!card || typeof card !== "object" || !("type" in card)) {
-      throw new Error(`card ${index + 1} is missing type`);
+      throw new ManifestError(`card ${index + 1} is missing type`, `manifest.cards[${index}]`);
     }
     if (card.out !== undefined && typeof card.out !== "string") {
-      throw new Error(`card ${index + 1} out must be a string`);
+      throw new ManifestError(`card ${index + 1} out must be a string`, `manifest.cards[${index}].out`);
     }
     const resolved = substituteVars(card, manifest.vars);
     const type = (resolved as { type?: unknown }).type;
     if (!CARD_TYPE_SET.has(String(type))) {
-      throw new Error(`card ${index + 1} has unknown type: ${String(type)}`);
+      throw new ManifestError(`card ${index + 1} has unknown type: ${String(type)}`, `manifest.cards[${index}].type`);
     }
     const file = substituteString(card.out ?? `${card.type}-${index + 1}.svg`, manifest.vars ?? {});
     if (file.includes("..") || posix.isAbsolute(file) || file.startsWith("/") || /^[A-Za-z]:[\\/]/.test(file)) {
-      throw new Error(`refusing path traversal in out: ${file}`);
+      throw new ManifestError(`refusing path traversal in out: ${file}`, `manifest.cards[${index}].out`);
     }
     return { resolved, file, type: String(type) };
   });
@@ -253,7 +260,10 @@ export function prepareManifest(manifest: Manifest): PreparedCard[] {
     const key = posix.normalize(file);
     const first = seen.get(key);
     if (first !== undefined) {
-      throw new Error(`duplicate output path "${file}" (cards ${first + 1} and ${index + 1})`);
+      throw new ManifestError(
+        `duplicate output path "${file}" (cards ${first + 1} and ${index + 1})`,
+        `manifest.cards[${index}].out`,
+      );
     }
     seen.set(key, index);
   });

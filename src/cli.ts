@@ -47,7 +47,7 @@ import {
 } from "./escape.js";
 import { invokedDirectly } from "./main.js";
 import { createPreviewServer } from "./preview.js";
-import { validateManifest } from "./validate.js";
+import { formatValidationErrors, inspectManifest } from "./validate.js";
 import { packageVersion } from "./version.js";
 
 function help(): string {
@@ -59,7 +59,7 @@ Usage:
   svgforge init [dir] [--force]
   svgforge preview [manifest] [--port 4321] [--set key=value]
   svgforge render manifest.json -o ./assets [--set key=value]
-  svgforge validate manifest.json
+  svgforge validate manifest.json [--json]
   svgforge demo [-o ./svgforge-demo]
   svgforge themes | types
   svgforge --help | --version
@@ -72,8 +72,10 @@ Preview:
       local gallery on 127.0.0.1; --set overrides manifest vars
 
 Validate:
-  svgforge validate manifest.json  schema, paths, duplicate outputs, types, themes
-      reports the card count and output files; never writes files
+  svgforge validate manifest.json [--json]
+      schema, paths, duplicate outputs, types, themes; never writes files
+  svgforge validate --json -     read the manifest from stdin, print one JSON object
+      ({ ok, cards, types, outputs, errors: [{ path, message }] })
 
 Card types (see below for their flags):
   banner stats skills terminal badge
@@ -364,7 +366,12 @@ function initScaffold(dir: string, force: boolean): number {
   return 0;
 }
 
-export function run(argv: string[]): number {
+export interface RunOptions {
+  /** Text to use for `-` manifests instead of reading file descriptor 0. */
+  stdin?: string;
+}
+
+export function run(argv: string[], options: RunOptions = {}): number {
   const cmd = argv[0];
   if (!cmd || cmd === "-h" || cmd === "--help") {
     console.log(help());
@@ -431,21 +438,43 @@ export function run(argv: string[]): number {
     }
     if (cmd === "validate") {
       const args = argv.slice(1);
-      const flags = args.filter((arg) => arg.startsWith("-"));
-      if (flags.length > 0) throw new Error(`unknown validate flag: ${flags[0]}`);
-      if (args.length !== 1) throw new Error("validate needs exactly one manifest path");
-      const file = resolve(args[0]);
+      const json = args.includes("--json");
+      const positional = args.filter((arg) => arg === "-" || !arg.startsWith("-"));
+      const unknown = args.filter((arg) => arg !== "--json" && arg !== "-" && arg.startsWith("-"));
+      const fail = (message: string, path = "manifest"): number => {
+        if (json) {
+          console.log(JSON.stringify({ ok: false, cards: 0, types: [], outputs: [], errors: [{ path, message }] }));
+          return 1;
+        }
+        throw new Error(message);
+      };
+      if (unknown.length > 0) return fail(`unknown validate flag: ${unknown[0]}`, "argv");
+      if (positional.length !== 1) return fail("validate needs exactly one manifest path (or - for stdin)", "argv");
+      const source = positional[0];
+      let text: string;
+      try {
+        text = source === "-" ? (options.stdin ?? readFileSync(0, "utf8")) : readFileSync(resolve(source), "utf8");
+      } catch (error) {
+        return fail(`cannot read manifest ${source === "-" ? "from stdin" : source}: ${(error as Error).message}`);
+      }
       let manifest: Manifest;
       try {
-        manifest = JSON.parse(readFileSync(file, "utf8")) as Manifest;
+        manifest = JSON.parse(text) as Manifest;
       } catch (error) {
-        if (error instanceof SyntaxError) throw new Error(`invalid JSON in ${args[0]}: ${error.message}`);
+        if (error instanceof SyntaxError) {
+          return fail(`invalid JSON in ${source === "-" ? "stdin" : source}: ${error.message}`);
+        }
         throw error;
       }
-      const summary = validateManifest(manifest);
-      console.log(`valid manifest: ${summary.cards} card${summary.cards === 1 ? "" : "s"}`);
-      console.log(`types: ${summary.types.join(", ") || "none"}`);
-      console.log(`outputs: ${summary.outputs.join(", ") || "none"}`);
+      const result = inspectManifest(manifest);
+      if (json) {
+        console.log(JSON.stringify(result));
+        return result.ok ? 0 : 1;
+      }
+      if (!result.ok) throw new Error(formatValidationErrors(result.errors));
+      console.log(`valid manifest: ${result.cards} card${result.cards === 1 ? "" : "s"}`);
+      console.log(`types: ${result.types.join(", ") || "none"}`);
+      console.log(`outputs: ${result.outputs.join(", ") || "none"}`);
       return 0;
     }
     const common = parseCommon(argv);
@@ -885,7 +914,8 @@ export function run(argv: string[]): number {
         console.error("render requires a manifest json");
         return 1;
       }
-      const manifest = JSON.parse(readFileSync(resolve(file), "utf8")) as Manifest;
+      const text = file === "-" ? (options.stdin ?? readFileSync(0, "utf8")) : readFileSync(resolve(file), "utf8");
+      const manifest = JSON.parse(text) as Manifest;
       const cliVars: Record<string, string | number> = {};
       for (const pair of takeAll(argv, "--set")) {
         const idx = pair.indexOf("=");
