@@ -462,6 +462,84 @@ describe("manifest + cli", () => {
     }
   });
 
+  it("validates a manifest and writes no files", () => {
+    const dir = mkdtempSync(join(tmpdir(), "svgforge-validate-"));
+    const manifest = join(dir, "m.json");
+    writeFileSync(
+      manifest,
+      JSON.stringify({
+        theme: "midnight",
+        vars: { user: "KodYazicam" },
+        cards: [
+          { type: "banner", title: "{{user}}", out: "banner.svg" },
+          { type: "badge", label: "license", value: "Apache-2.0", out: "nested/badge.svg" },
+        ],
+      }),
+    );
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    try {
+      expect(run(["validate", manifest])).toBe(0);
+      const output = log.mock.calls.map((call) => call.join(" ")).join("\n");
+      expect(output).toContain("valid manifest: 2 cards");
+      expect(output).toContain("types: banner, badge");
+      expect(output).toContain("outputs: banner.svg, nested/badge.svg");
+      expect(existsSync(join(dir, "banner.svg"))).toBe(false);
+      expect(existsSync(join(dir, "nested"))).toBe(false);
+    } finally {
+      log.mockRestore();
+    }
+  });
+
+  it("rejects schema, path, duplicate, type, and theme errors", () => {
+    const dir = mkdtempSync(join(tmpdir(), "svgforge-validate-"));
+    const manifest = join(dir, "m.json");
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const cases: Array<[string, object, RegExp]> = [
+      ["unknown top-level key", { cards: [], extra: true }, /manifest\.extra: unknown property/],
+      ["invalid color", { cards: [{ type: "banner", bg: "red" }] }, /cards\[0\]\.bg/],
+      ["traversal", { cards: [{ type: "banner", out: "../evil.svg" }] }, /refusing path traversal/],
+      [
+        "duplicate output",
+        { cards: [{ type: "banner", out: "same.svg" }, { type: "badge", out: "same.svg" }] },
+        /duplicate output path/,
+      ],
+      ["unknown type", { cards: [{ type: "nope" }] }, /card 1 has unknown type: nope/],
+      ["unknown manifest theme", { theme: "nope", cards: [{ type: "banner" }] }, /unknown theme "nope"/],
+      [
+        "unknown card theme",
+        { cards: [{ type: "banner", theme: "nope" }] },
+        /cards\[0\]\.theme: unknown theme "nope"/,
+      ],
+    ];
+    try {
+      for (const [label, payload, pattern] of cases) {
+        writeFileSync(manifest, JSON.stringify(payload));
+        expect(run(["validate", manifest]), label).toBe(1);
+        const message = error.mock.calls.at(-1)?.join(" ") ?? "";
+        expect(message, label).toMatch(pattern);
+      }
+      expect(existsSync(join(dir, "same.svg"))).toBe(false);
+    } finally {
+      error.mockRestore();
+    }
+  });
+
+  it("rejects bad validate invocations and invalid JSON", () => {
+    const dir = mkdtempSync(join(tmpdir(), "svgforge-validate-"));
+    const manifest = join(dir, "m.json");
+    writeFileSync(manifest, "{not json");
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      expect(run(["validate", manifest])).toBe(1);
+      expect(error.mock.calls.at(-1)?.join(" ")).toMatch(/invalid JSON/);
+      expect(run(["validate"])).toBe(1);
+      expect(run(["validate", manifest, manifest])).toBe(1);
+      expect(run(["validate", manifest, "--nope"])).toBe(1);
+    } finally {
+      error.mockRestore();
+    }
+  });
+
   it("demo writes one svg per card type", () => {
     const dir = mkdtempSync(join(tmpdir(), "svgforge-demo-"));
     expect(run(["demo", "-o", dir])).toBe(0);

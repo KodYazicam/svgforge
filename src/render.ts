@@ -214,7 +214,19 @@ export function safeOutputPath(baseDir: string, file: string): string {
   return target;
 }
 
-export function renderManifest(manifest: Manifest): Array<{ file: string; svg: string }> {
+const CARD_TYPE_SET = new Set<string>(CARD_TYPES);
+
+export interface PreparedCard {
+  resolved: Card;
+  file: string;
+  type: string;
+}
+
+/**
+ * Substitute vars and validate every card's type and output path without
+ * rendering. Shared by `renderManifest` and `svgforge validate`.
+ */
+export function prepareManifest(manifest: Manifest): PreparedCard[] {
   if (!manifest?.cards || !Array.isArray(manifest.cards)) {
     throw new Error("manifest must contain a cards array");
   }
@@ -222,12 +234,19 @@ export function renderManifest(manifest: Manifest): Array<{ file: string; svg: s
     if (!card || typeof card !== "object" || !("type" in card)) {
       throw new Error(`card ${index + 1} is missing type`);
     }
+    if (card.out !== undefined && typeof card.out !== "string") {
+      throw new Error(`card ${index + 1} out must be a string`);
+    }
     const resolved = substituteVars(card, manifest.vars);
+    const type = (resolved as { type?: unknown }).type;
+    if (!CARD_TYPE_SET.has(String(type))) {
+      throw new Error(`card ${index + 1} has unknown type: ${String(type)}`);
+    }
     const file = substituteString(card.out ?? `${card.type}-${index + 1}.svg`, manifest.vars ?? {});
     if (file.includes("..") || posix.isAbsolute(file) || file.startsWith("/") || /^[A-Za-z]:[\\/]/.test(file)) {
       throw new Error(`refusing path traversal in out: ${file}`);
     }
-    return { resolved, file };
+    return { resolved, file, type: String(type) };
   });
   const seen = new Map<string, number>();
   prepared.forEach(({ file }, index) => {
@@ -238,5 +257,9 @@ export function renderManifest(manifest: Manifest): Array<{ file: string; svg: s
     }
     seen.set(key, index);
   });
-  return prepared.map(({ resolved, file }) => ({ file, svg: renderCard(resolved, manifest.theme) }));
+  return prepared;
+}
+
+export function renderManifest(manifest: Manifest): Array<{ file: string; svg: string }> {
+  return prepareManifest(manifest).map(({ resolved, file }) => ({ file, svg: renderCard(resolved, manifest.theme) }));
 }
