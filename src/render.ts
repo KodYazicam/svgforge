@@ -218,7 +218,7 @@ export function renderManifest(manifest: Manifest): Array<{ file: string; svg: s
   if (!manifest?.cards || !Array.isArray(manifest.cards)) {
     throw new Error("manifest must contain a cards array");
   }
-  return manifest.cards.map((card, index) => {
+  const prepared = manifest.cards.map((card, index) => {
     if (!card || typeof card !== "object" || !("type" in card)) {
       throw new Error(`card ${index + 1} is missing type`);
     }
@@ -227,6 +227,16 @@ export function renderManifest(manifest: Manifest): Array<{ file: string; svg: s
     if (file.includes("..") || posix.isAbsolute(file) || file.startsWith("/") || /^[A-Za-z]:[\\/]/.test(file)) {
       throw new Error(`refusing path traversal in out: ${file}`);
     }
-    return { file, svg: renderCard(resolved, manifest.theme) };
+    return { resolved, file };
   });
+  const seen = new Map<string, number>();
+  prepared.forEach(({ file }, index) => {
+    const key = posix.normalize(file);
+    const first = seen.get(key);
+    if (first !== undefined) {
+      throw new Error(`duplicate output path "${file}" (cards ${first + 1} and ${index + 1})`);
+    }
+    seen.set(key, index);
+  });
+  return prepared.map(({ resolved, file }) => ({ file, svg: renderCard(resolved, manifest.theme) }));
 }

@@ -42,6 +42,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   example from ~9.0 KB to ~6.4 KB with the same shape.
 - Added a documentation coverage test that verifies every card type has a section, a demo entry, and a rendered example.
 
+### Fixed
+
+- `renderManifest` (and therefore `svgforge render` and `svgforge preview`)
+  now rejects two cards that resolve to the same output path instead of
+  silently overwriting the first file. The error names the path and both
+  card positions. Paths are compared after POSIX normalization, so `a.svg`
+  and `./a.svg` collide.
+
 ### Security
 
 - Upgraded `vitest` and `@vitest/coverage-v8` to 5.1.0, clearing the dev-only
