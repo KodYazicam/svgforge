@@ -41,6 +41,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Theme records are frozen and shared, color overrides use a bounded
+  per-process memo, and manifest schema parsing is cached by path + mtime in a
+  small LRU instead of a permanent singleton. Rendered SVG output is unchanged.
 - Built-in themes now meet WCAG AA contrast: `text` and `muted` reach 4.5:1
   against both background stops, and `accent` reaches 3:1. Eight themes had
   their muted color adjusted, and `solarized-light` also had its text color

@@ -1,4 +1,4 @@
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, symlinkSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, symlinkSync, utimesSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -28,9 +28,10 @@ import { radar } from "../src/cards/radar.js";
 import { columns } from "../src/cards/columns.js";
 import { figure } from "../src/cards/figure.js";
 import { mark } from "../src/cards/mark.js";
-import { renderManifest, renderCard, safeOutputPath, substituteVars, CARD_TYPES, type Card } from "../src/render.js";
+import { renderManifest, renderCard, safeOutputPath, substituteVars, CARD_TYPES, type Card, type Manifest } from "../src/render.js";
 import { rating } from "../src/cards/rating.js";
-import { escapeXml, THEMES, resolveTheme, applyOverrides, isValidColor, mixHex, seededRandom, scaleSvg, wrapLines, shadowFilter, shadowAttr, approxTextWidth, contrastRatio, relativeLuminance } from "../src/escape.js";
+import { escapeXml, THEMES, resolveTheme, applyOverrides, isValidColor, mixHex, seededRandom, scaleSvg, wrapLines, shadowFilter, shadowAttr, approxTextWidth, contrastRatio, relativeLuminance, cardTheme, clearThemeCache, themeCacheSize, THEME_OVERRIDE_CACHE_LIMIT } from "../src/escape.js";
+import { loadSchema, clearSchemaCache, schemaCacheSize, SCHEMA_CACHE_LIMIT } from "../src/schema.js";
 import { run } from "../src/cli.js";
 import { invokedDirectly } from "../src/main.js";
 import { createPreviewServer, isLoopbackAddress } from "../src/preview.js";
@@ -324,6 +325,96 @@ describe("themes and overrides", () => {
   it("wraps long text", () => {
     expect(wrapLines("aaa bbb ccc", 7)).toEqual(["aaa bbb", "ccc"]);
     expect(wrapLines("abcdefghijkl", 5)).toEqual(["abcde", "fghij", "kl"]);
+  });
+});
+
+describe("theme and schema caches", () => {
+  it("reuses immutable theme records and caches overrides", () => {
+    clearThemeCache();
+    expect(themeCacheSize()).toBe(0);
+
+    const nord = resolveTheme("nord");
+    expect(nord).toBe(THEMES.nord);
+    expect(Object.isFrozen(nord)).toBe(true);
+    expect(cardTheme({ theme: "nord" })).toBe(nord);
+    expect(themeCacheSize()).toBe(0);
+
+    const overridden = cardTheme({ theme: "nord", accent: "#123456" });
+    expect(themeCacheSize()).toBe(1);
+    expect(overridden.accent).toBe("#123456");
+    expect(overridden.bg).toBe(nord.bg);
+    expect(cardTheme({ theme: "nord", accent: "#123456" })).toBe(overridden);
+    expect(themeCacheSize()).toBe(1);
+    expect(nord.accent).not.toBe("#123456");
+
+    const dracula = cardTheme({ theme: "dracula", accent: "#123456" });
+    expect(dracula).not.toBe(overridden);
+    expect(dracula.bg).toBe(THEMES.dracula.bg);
+    expect(dracula.accent).toBe("#123456");
+    expect(themeCacheSize()).toBe(2);
+
+    const combo = cardTheme({ theme: "nord", bg: "#ffffff", accent: "#000000" });
+    expect(() => cardTheme({ theme: "nord", bg: "#ffffff|accent=#000000" })).toThrow(/invalid color/);
+    expect(cardTheme({ theme: "nord", bg: "#ffffff", accent: "#000000" })).toBe(combo);
+
+    expect(() => cardTheme({ theme: "nord", accent: "red" })).toThrow(/invalid color/);
+  });
+
+  it("bounds the theme override cache", () => {
+    clearThemeCache();
+    for (let i = 0; i < THEME_OVERRIDE_CACHE_LIMIT + 8; i += 1) {
+      cardTheme({ theme: "midnight", bg: `#${i.toString(16).padStart(6, "0")}` });
+    }
+    expect(themeCacheSize()).toBe(THEME_OVERRIDE_CACHE_LIMIT);
+    clearThemeCache();
+  });
+
+  it("renders identical output from warm and cleared theme caches", () => {
+    const manifest: Manifest = {
+      theme: "nord",
+      cards: [
+        { type: "banner", title: "cache", out: "a.svg" },
+        { type: "badge", label: "x", value: "y", theme: "dracula", out: "b.svg" },
+      ],
+    };
+    const warm = renderManifest(manifest);
+    expect(renderManifest(manifest)).toEqual(warm);
+    clearThemeCache();
+    expect(renderManifest(manifest)).toEqual(warm);
+  });
+
+  it("caches schemas by path and invalidates when mtime changes", () => {
+    const dir = mkdtempSync(join(tmpdir(), "svgforge-schema-"));
+    const path = join(dir, "schema.json");
+    writeFileSync(path, JSON.stringify({ type: "object", title: "first" }));
+    clearSchemaCache();
+    const first = loadSchema(path);
+    expect(loadSchema(path)).toBe(first);
+    expect(schemaCacheSize()).toBe(1);
+
+    const future = new Date(Date.now() + 5000);
+    utimesSync(path, future, future);
+    const second = loadSchema(path);
+    expect(second).not.toBe(first);
+    expect(second).toEqual(first);
+    expect(schemaCacheSize()).toBe(1);
+  });
+
+  it("bounds the schema cache and evicts old paths", () => {
+    clearSchemaCache();
+    const dir = mkdtempSync(join(tmpdir(), "svgforge-schema-"));
+    const paths = Array.from({ length: SCHEMA_CACHE_LIMIT + 1 }, (_, index) => {
+      const path = join(dir, `schema-${index}.json`);
+      writeFileSync(path, JSON.stringify({ type: "object", title: `schema-${index}` }));
+      return path;
+    });
+    const loaded = paths.slice(0, SCHEMA_CACHE_LIMIT).map((path) => loadSchema(path));
+    expect(schemaCacheSize()).toBe(SCHEMA_CACHE_LIMIT);
+    expect(new Set(loaded).size).toBe(SCHEMA_CACHE_LIMIT);
+    loadSchema(paths[SCHEMA_CACHE_LIMIT]);
+    expect(loadSchema(paths[0])).not.toBe(loaded[0]);
+    expect(schemaCacheSize()).toBe(SCHEMA_CACHE_LIMIT);
+    clearSchemaCache();
   });
 });
 
@@ -986,6 +1077,31 @@ describe("preview server", () => {
         const post = await fetch(`${base}/`, { method: "POST" });
         expect(post.status).toBe(405);
         expect(post.headers.get("allow")).toBe("GET, HEAD");
+      },
+    );
+  });
+
+  it("serves warm preview requests without re-rendering", async () => {
+    await withPreview(
+      { theme: "nord", cards: [{ type: "banner", title: "warm", bg: "#123456" }] },
+      async (base, dir) => {
+        // createPreviewServer loads once, so the first request is already warm.
+        clearThemeCache();
+        expect((await fetch(`${base}/`)).status).toBe(200);
+        expect(themeCacheSize()).toBe(0);
+
+        writeFileSync(
+          join(dir, "svgforge.json"),
+          JSON.stringify({ theme: "nord", cards: [{ type: "banner", title: "changed", bg: "#123456" }] }),
+        );
+        expect((await fetch(`${base}/`)).status).toBe(200);
+        expect(themeCacheSize()).toBe(1);
+
+        // The manifest text is unchanged again, so the cached payload is reused
+        // and no card (or theme override) is resolved again.
+        clearThemeCache();
+        expect((await fetch(`${base}/`)).status).toBe(200);
+        expect(themeCacheSize()).toBe(0);
       },
     );
   });
