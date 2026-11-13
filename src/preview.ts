@@ -1,6 +1,6 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, watch, type FSWatcher } from "node:fs";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
-import { resolve } from "node:path";
+import { basename, dirname, resolve } from "node:path";
 import { escapeXml } from "./escape.js";
 import { renderManifest, type Manifest } from "./render.js";
 
@@ -19,8 +19,22 @@ export interface PreviewOptions {
   vars?: Record<string, string | number>;
 }
 
-const HTML_CSP = "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'";
+export const PREVIEW_RELOAD_DEBOUNCE_MS = 150;
+
+const HTML_CSP = "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'none'";
 const SVG_CSP = "default-src 'none'; img-src https: data:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'";
+
+export function isLoopbackAddress(address: string | undefined): boolean {
+  return (
+    address === "::1" ||
+    Boolean(address?.startsWith("127.")) ||
+    Boolean(address?.startsWith("::ffff:127."))
+  );
+}
+
+function isLoopback(req: IncomingMessage): boolean {
+  return isLoopbackAddress(req.socket.remoteAddress);
+}
 
 function loadPreview(manifestPath: string, text: string, vars: PreviewOptions["vars"] = {}): PreviewPayload {
   const manifest = JSON.parse(text) as Manifest;
@@ -75,11 +89,15 @@ function galleryHtml(payload: PreviewPayload): string {
 <body>
   <header>
     <h1>svgforge preview</h1>
-    <p>Manifest: <code>${escapeXml(payload.manifestPath)}</code> · ${payload.items.length} card${payload.items.length === 1 ? "" : "s"} · refresh after edits</p>
+    <p>Manifest: <code>${escapeXml(payload.manifestPath)}</code> · ${payload.items.length} card${payload.items.length === 1 ? "" : "s"} · live reload on save</p>
   </header>
   <main>
 ${cards || '    <p>No cards in this manifest.</p>'}
   </main>
+  <script>
+    const events = new EventSource("/events");
+    events.addEventListener("reload", () => location.reload());
+  </script>
 </body>
 </html>
 `;
@@ -138,7 +156,71 @@ export function createPreviewServer(manifestPath: string, options: PreviewOption
   // Fail fast on a missing or invalid manifest before the port is opened.
   load();
 
-  return createServer((req: IncomingMessage, res: ServerResponse) => {
+  const clients = new Set<ServerResponse>();
+  let debounce: NodeJS.Timeout | undefined;
+  let watcher: FSWatcher | undefined;
+  let stopped = false;
+
+  const cleanup = (): void => {
+    if (stopped) return;
+    stopped = true;
+    if (debounce) clearTimeout(debounce);
+    debounce = undefined;
+    try {
+      watcher?.close();
+    } catch {
+      // The watcher may already be closed by the platform.
+    }
+    watcher = undefined;
+    for (const client of clients) {
+      try {
+        client.end();
+      } catch {
+        // The client may already be gone.
+      }
+    }
+    clients.clear();
+  };
+
+  const broadcast = (): void => {
+    for (const client of clients) {
+      try {
+        client.write(`event: reload\ndata: ${Date.now()}\n\n`);
+      } catch {
+        clients.delete(client);
+      }
+    }
+  };
+
+  const scheduleReload = (): void => {
+    if (stopped) return;
+    if (debounce) clearTimeout(debounce);
+    debounce = setTimeout(() => {
+      debounce = undefined;
+      broadcast();
+    }, PREVIEW_RELOAD_DEBOUNCE_MS);
+    debounce.unref();
+  };
+
+  try {
+    watcher = watch(dirname(absolute), (_event, filename) => {
+      const name = typeof filename === "string" ? filename : "";
+      if (!name || name === basename(absolute)) scheduleReload();
+    });
+    watcher.on("error", () => {
+      // Keep the gallery usable; live reload just stops.
+      try {
+        watcher?.close();
+      } catch {
+        // Ignore a watcher that is already gone.
+      }
+      watcher = undefined;
+    });
+  } catch {
+    watcher = undefined;
+  }
+
+  const server = createServer((req: IncomingMessage, res: ServerResponse) => {
     const head = req.method === "HEAD";
     if (req.method !== "GET" && !head) {
       res.writeHead(405, {
@@ -163,6 +245,44 @@ export function createPreviewServer(manifestPath: string, options: PreviewOption
         send(res, 500, "text/html; charset=utf-8", errorHtml("Manifest error", (error as Error).message), head, {
           "Content-Security-Policy": HTML_CSP,
         });
+      }
+      return;
+    }
+
+    if (url.pathname === "/events") {
+      if (!isLoopback(req)) {
+        send(res, 403, "text/plain; charset=utf-8", "forbidden\n", head, {
+          "Content-Security-Policy": HTML_CSP,
+        });
+        return;
+      }
+      if (head) {
+        res.writeHead(200, {
+          "Content-Type": "text/event-stream; charset=utf-8",
+          "Content-Length": 0,
+          "Cache-Control": "no-store",
+          "X-Content-Type-Options": "nosniff",
+          "Referrer-Policy": "no-referrer",
+          "Content-Security-Policy": "default-src 'none'",
+        });
+        res.end();
+        return;
+      }
+      res.writeHead(200, {
+        "Content-Type": "text/event-stream; charset=utf-8",
+        "Cache-Control": "no-store",
+        "Connection": "keep-alive",
+        "X-Content-Type-Options": "nosniff",
+        "Referrer-Policy": "no-referrer",
+        "Content-Security-Policy": "default-src 'none'",
+      });
+      clients.add(res);
+      res.on("close", () => clients.delete(res));
+      res.on("error", () => clients.delete(res));
+      try {
+        res.write("retry: 1000\n\n");
+      } catch {
+        clients.delete(res);
       }
       return;
     }
@@ -192,4 +312,13 @@ export function createPreviewServer(manifestPath: string, options: PreviewOption
 
     notFound(res, head);
   });
+
+  server.on("close", cleanup);
+  const close = server.close.bind(server);
+  server.close = ((callback?: (error?: Error) => void) => {
+    // End SSE clients first; otherwise a kept-alive event stream blocks close().
+    cleanup();
+    return close(callback);
+  }) as Server["close"];
+  return server;
 }
