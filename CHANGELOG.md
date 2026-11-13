@@ -38,6 +38,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   coverage is now 96%.
 - Contributions heatmap cells are grouped by level color, shrinking the default
   example from ~26 KB to ~20 KB with identical layout.
+- Wave cards sample sine paths every 15 px instead of 10 px, shrinking the
+  example from ~9.0 KB to ~6.4 KB with the same shape.
 - Added a documentation coverage test that verifies every card type has a section, a demo entry, and a rendered example.
 
 ### Security

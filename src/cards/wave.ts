@@ -10,7 +10,7 @@ function wavePath(width: number, height: number, y: number, amp: number, len: nu
   const points: string[] = [];
   const start = -len * 2;
   const end = width + len * 2;
-  for (let x = start; x <= end; x += 10) {
+  for (let x = start; x <= end; x += 15) {
     const yy = y + amp * Math.sin((2 * Math.PI * (x + phase)) / len);
     points.push(`${points.length === 0 ? "M" : "L"}${x.toFixed(1)},${yy.toFixed(1)}`);
   }
