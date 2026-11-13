@@ -540,6 +540,122 @@ describe("manifest + cli", () => {
     }
   });
 
+  it("returns one machine-readable JSON report from validate --json", () => {
+    const dir = mkdtempSync(join(tmpdir(), "svgforge-validate-"));
+    const manifest = join(dir, "m.json");
+    writeFileSync(
+      manifest,
+      JSON.stringify({
+        cards: [
+          { type: "banner", title: "a", out: "banner.svg" },
+          { type: "badge", label: "b", value: "c", out: "nested/badge.svg" },
+        ],
+      }),
+    );
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    interface Report {
+      ok: boolean;
+      cards: number;
+      types: string[];
+      outputs: string[];
+      errors: Array<{ path: string; message: string }>;
+    }
+    try {
+      expect(run(["validate", "--json", manifest])).toBe(0);
+      expect(log).toHaveBeenCalledTimes(1);
+      const report = JSON.parse(String(log.mock.calls[0][0])) as Report;
+      expect(Object.keys(report).sort()).toEqual(["cards", "errors", "ok", "outputs", "types"]);
+      expect(report).toEqual({
+        ok: true,
+        cards: 2,
+        types: ["banner", "badge"],
+        outputs: ["banner.svg", "nested/badge.svg"],
+        errors: [],
+      });
+      expect(error).not.toHaveBeenCalled();
+
+      writeFileSync(manifest, JSON.stringify({ cards: [{ type: "banner", bg: "red" }] }));
+      log.mockClear();
+      expect(run(["validate", "--json", manifest])).toBe(1);
+      expect(log).toHaveBeenCalledTimes(1);
+      const schemaReport = JSON.parse(String(log.mock.calls[0][0])) as Report;
+      expect(schemaReport.ok).toBe(false);
+      expect(schemaReport.errors[0].path).toBe("manifest.cards[0].bg");
+      expect(typeof schemaReport.errors[0].message).toBe("string");
+      expect(error).not.toHaveBeenCalled();
+
+      writeFileSync(manifest, JSON.stringify({ cards: [{ type: "banner", out: "../evil.svg" }] }));
+      log.mockClear();
+      expect(run(["validate", "--json", manifest])).toBe(1);
+      const traversalReport = JSON.parse(String(log.mock.calls[0][0])) as Report;
+      expect(traversalReport.errors[0].path).toBe("manifest.cards[0].out");
+      expect(traversalReport.errors[0].message).toMatch(/traversal/);
+      expect(error).not.toHaveBeenCalled();
+    } finally {
+      log.mockRestore();
+      error.mockRestore();
+    }
+  });
+
+  it("keeps validate --json stdout pure when JSON is invalid", () => {
+    const dir = mkdtempSync(join(tmpdir(), "svgforge-validate-"));
+    const manifest = join(dir, "m.json");
+    writeFileSync(manifest, "{not json");
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      expect(run(["validate", "--json", manifest])).toBe(1);
+      expect(log).toHaveBeenCalledTimes(1);
+      const report = JSON.parse(String(log.mock.calls[0][0])) as {
+        ok: boolean;
+        cards: number;
+        types: string[];
+        outputs: string[];
+        errors: Array<{ path: string; message: string }>;
+      };
+      expect(report.ok).toBe(false);
+      expect(report.cards).toBe(0);
+      expect(report.errors).toHaveLength(1);
+      expect(report.errors[0].path).toBe("manifest");
+      expect(report.errors[0].message).toMatch(/invalid JSON/);
+      expect(error).not.toHaveBeenCalled();
+    } finally {
+      log.mockRestore();
+      error.mockRestore();
+    }
+  });
+
+  it("reads manifests from stdin for validate and render", () => {
+    const dir = mkdtempSync(join(tmpdir(), "svgforge-stdin-"));
+    const input = JSON.stringify({
+      cards: [{ type: "banner", title: "piped", out: "piped.svg" }],
+    });
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      expect(run(["validate", "--json", "-"], { stdin: input })).toBe(0);
+      const report = JSON.parse(String(log.mock.calls[0][0])) as {
+        ok: boolean;
+        cards: number;
+        outputs: string[];
+      };
+      expect(report.ok).toBe(true);
+      expect(report.cards).toBe(1);
+      expect(report.outputs).toEqual(["piped.svg"]);
+
+      expect(run(["render", "-", "-o", dir], { stdin: input })).toBe(0);
+      expect(readFileSync(join(dir, "piped.svg"), "utf8")).toContain("piped");
+
+      expect(run(["validate", "-"], { stdin: '{"cards":[{"type":"banner","out":"../x.svg"}]}' })).toBe(1);
+      expect(error.mock.calls.at(-1)?.join(" ")).toMatch(/refusing path traversal/);
+      expect(existsSync(join(dir, "x.svg"))).toBe(false);
+    } finally {
+      log.mockRestore();
+      error.mockRestore();
+    }
+  });
+
   it("demo writes one svg per card type", () => {
     const dir = mkdtempSync(join(tmpdir(), "svgforge-demo-"));
     expect(run(["demo", "-o", dir])).toBe(0);

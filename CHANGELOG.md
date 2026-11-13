@@ -29,6 +29,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (shared with `renderManifest`), unknown card types, and unknown themes.
   Success prints the card count, types, and output paths; any problem exits 1
   with a specific message.
+- `svgforge validate --json` prints one machine-readable object on stdout
+  (`ok`, `cards`, `types`, `outputs`, `errors` with `path` + `message`) and
+  keeps diagnostics off stdout. Exit codes are unchanged.
+- `validate` and `render` accept `-` as the manifest path and read JSON from
+  stdin, enabling `cat manifest.json | svgforge validate --json -`.
 
 ### Changed
 

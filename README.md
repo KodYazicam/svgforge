@@ -278,7 +278,7 @@ svgforge <card-type> [flags] [-o file.svg]
 svgforge init [dir] [--force]
 svgforge preview [manifest] [--port 4321] [--set key=value]
 svgforge render manifest.json -o ./outdir [--set key=value]
-svgforge validate manifest.json
+svgforge validate manifest.json [--json]
 svgforge demo [-o ./svgforge-demo]
 svgforge themes | types
 svgforge --help | --version
@@ -334,6 +334,15 @@ svgforge validate svgforge.json
 ```
 
 It runs the published JSON schema (unknown keys, wrong types, invalid colors, unsafe `out`), the same path and duplicate-output checks as `render`, plus unknown card types and themes.
+
+For CI, `--json` prints one object on stdout (`ok`, `cards`, `types`, `outputs`, `errors[]`) and keeps diagnostics out of stdout. Each error has a `path` and `message`; the exit code is still 1 when `ok` is false:
+
+```bash
+cat svgforge.json | svgforge validate --json -
+# {"ok":true,"cards":2,"types":["banner","stats"],"outputs":["banner.svg","stats.svg"],"errors":[]}
+```
+
+Both `validate` and `render` accept `-` instead of a manifest path to read from stdin, so `cat svgforge.json | svgforge render - -o assets` works without a temporary file.
 
 Per-card `theme` overrides the manifest default. If `out` is omitted, files are `banner-1.svg`, `stats-2.svg`, …
 
